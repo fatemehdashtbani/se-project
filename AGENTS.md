@@ -1,531 +1,260 @@
-# AGENTS.md
-
-> **Read this file before doing anything in this repository.**
-> This document is the single source of truth for how software is designed, built,
-> tested, and documented in this project. Any human or AI agent contributing to this
-> repository MUST comply with the rules defined here.
-
----
-
-## 1. Purpose
-
-This repository hosts **Routine Manager** — a professional SaaS platform for
-individuals and mentors to create, schedule, track, and analyze daily, weekly,
-and monthly routines (habits, tasks, recurring activities). The project follows
-**strict software engineering discipline**: spec-driven development, TDD,
-architecture decision records, and living documentation.
-
-Every contribution — human or AI-generated — is expected to be **reproducible,
-auditable, testable, and documented**.
-
----
-
-## 2. Product Scope (High Level)
-
-Initial capabilities (each will become its own SPEC/PLAN feature):
-
-1. **Authentication & RBAC** — sign-up/login with JWT; three roles: **User**,
-   **Mentor**, **Admin**
-2. **User profile & onboarding**
-3. **Routine CRUD** — daily/weekly/monthly habits and tasks
-4. **Routine scheduling** — recurring patterns (weekly, custom RRULE-like)
-5. **Check-in tracking** — mark done/not done with optional note
-6. **Dashboard & analytics** — streaks, completion rate, trends
-7. **Reminders & notifications** — email + Android push
-8. **Mentor discovery** — browse and select a mentor
-9. **Mentor access** — mentor views assigned user's routines **only with the
-   user's explicit, revocable consent**
-10. **Mentor messaging** — comments on routines, direct messages
-11. **Subscription plans** — Free / Paid; plan limits enforced server-side
-12. **Admin panel** — web-only; user management, plan management, monitoring
-13. **Android app** — notifications, check-ins, routine viewing (tech stack in
-    ADR-0004)
-
-**Non-goals (for now):** iOS app, public marketplace, native desktop, advanced
-invoicing (separate ADR later).
-
----
-
-## 3. Technology Stack
-
-### Backend
-- **Python 3.12+**
-- **FastAPI** (async), **Uvicorn**
-- **SQLAlchemy 2.0 (async)** + **Alembic** for migrations
-- **PostgreSQL 16**
-- **Redis 7** (cache + queue)
-- **ARQ** (or Celery) for background jobs
-- **Pydantic v2** for schemas & settings
-- **pytest**, **pytest-asyncio**, **httpx.AsyncClient**, **testcontainers**,
-  **freezegun**
-- **ruff**, **mypy (strict)**, **pre-commit**
-
-### Frontend (Web)
-- **Vue 3** (Composition API, `<script setup>`)
-- **TypeScript** (strict)
-- **Vite**
-- **Pinia** (state), **Vue Router 4**
-- **TailwindCSS** + **shadcn-vue**-style primitives
-- **zod** + **vee-validate** (forms)
-- **Vitest** + **@vue/test-utils** (unit), **Playwright** (E2E)
-- **ESLint** + **Prettier**
-
-### Mobile (Android)
-- **Tech stack: TBD** — see `docs/adr/0004-mobile-tech-stack.md`
-- Candidates: Flutter / React Native / Kotlin (decision required before
-  feature `android-app` starts)
-- MUST consume the same `/api/v1` REST API as the web frontend
-
-### Infra / Ops
-- **Docker** + **docker-compose** (local dev)
-- **GitHub Actions** (CI: lint, type-check, test, build)
-- **Conventional Commits**
-
-> **Every new dependency requires justification** in the current feature's
-> `PLAN.md` under a "Dependencies & Rationale" section.
-
----
-
-## 4. Repository Layout
-
-```
-routine-manager/
-├── AGENTS.md
-├── Task-List.md
-├── README.md
-├── docker-compose.yml
-├── docs/
-│   ├── adr/
-│   │   ├── 0001-record-architecture-decisions.md
-│   │   ├── 0002-use-fastapi-and-sqlalchemy-async.md
-│   │   ├── 0003-choose-jwt-over-session.md
-│   │   ├── 0004-mobile-tech-stack.md        # TBD
-│   │   └── ...
-│   ├── features/
-│   │   ├── 001-user-auth/
-│   │   │   ├── SPEC.md
-│   │   │   └── PLAN.md
-│   │   └── ...
-│   └── diagrams/
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── core/            # config, security, logging, exceptions
-│   │   ├── api/             # routers (v1)
-│   │   ├── domain/          # entities, value objects, services, ports
-│   │   ├── infrastructure/  # db, cache, queue, external clients, adapters
-│   │   └── schemas/         # pydantic I/O models
-│   ├── alembic/
-│   ├── tests/
-│   │   ├── unit/
-│   │   ├── integration/
-│   │   └── e2e/
-│   ├── pyproject.toml
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── main.ts
-│   │   ├── app/             # router, layout, providers
-│   │   ├── features/        # feature-sliced modules
-│   │   ├── shared/          # components, composables, utils, api client
-│   │   └── assets/
-│   ├── tests/
-│   │   ├── unit/
-│   │   └── e2e/
-│   ├── package.json
-│   └── vite.config.ts
-├── mobile/                  # Android app (tech TBD — see ADR-0004)
-│   └── README.md
-└── .github/workflows/
-```
-
-**Backend architectural style:** layered / hexagonal — `api → domain ← infrastructure`.
-Dependencies point inward only.
-
-**Frontend architectural style:** feature-sliced design
-(`features/<name>/{api,components,composables,stores,pages,types}`).
-
----
-
-## 5. Documentation is Non-Negotiable
-
-### 5.1 Every feature MUST have a `SPEC.md` and a `PLAN.md`
-
-Located at `docs/features/<NNN-feature-slug>/`.
-
-- **`SPEC.md` (What & Why):** user stories, acceptance criteria, edge cases,
-  API contract, data model, UI/UX flows, non-functional requirements,
-  out-of-scope.
-- **`PLAN.md` (How & When):** technical approach, task breakdown with
-  checkboxes, TDD test list (Red first), dependencies & rationale, risks,
-  rollback plan.
-
-> **No production code may be written for a feature before its `SPEC.md` and
-> `PLAN.md` exist and are reviewed/approved.**
-
-### 5.2 Every architectural decision MUST have an ADR
-
-Located at `docs/adr/NNNN-kebab-title.md`, following the Michael Nygard format.
-**Never modify a past ADR** — write a new one that supersedes it.
-
-Decisions that require an ADR include (non-exhaustive):
-- Language / framework / major library choice
-- Database schema approach (normalization, soft-delete, multi-tenancy)
-- Auth mechanism (JWT vs session, refresh token strategy, OAuth providers)
-- RBAC model (roles, permissions, storage)
-- Async/queue strategy
-- API versioning & error envelope
-- Time zone storage convention
-- Mobile tech stack (ADR-0004)
-- Subscription plan enforcement strategy
-- Deployment topology
-
-### 5.3 `Task-List.md` is the single source of truth for status
-
-Every feature has an entry with links to its SPEC, PLAN, ADRs, and status.
-Update it **on the same commit** that changes state.
-
----
-
-## 6. Development Workflow (Strict Order)
-
-For **each new feature**, follow these steps **in order**:
-
-1. **Register** the feature in `Task-List.md` (status: `Backlog`).
-2. **Write** `docs/features/NNN-slug/SPEC.md`.
-3. **Review** the SPEC (self-review for solo work, PR review for teams).
-4. **Write** `docs/features/NNN-slug/PLAN.md` (task breakdown + TDD test list).
-5. **Create ADR(s)** for any architectural decision the feature introduces.
-6. **Create a branch:** `feature/NNN-slug`.
-7. **Implement with TDD** (see §7).
-8. **Update** `Task-List.md` → `In Review`, then `Done` after merge.
-9. **Update** affected docs (`README`, diagrams, API docs).
-
-**Definition of "started":** SPEC + PLAN exist and the branch is created.
-**Definition of "done":** see §15.
-
----
-
-## 7. Test-Driven Development (Non-Negotiable)
-
-**Cycle: Red → Green → Refactor.** No production code is merged without a test
-that failed first and then passed.
-
-### 7.1 Rules
-- **Backend:** every domain service, use case, endpoint, and serializer is
-  unit- or integration-tested. **Coverage target:** ≥ 85% line & branch on
-  `app/domain` and `app/api`.
-- **Frontend:** every composable, store, and non-trivial component is
-  unit-tested with Vitest. **Coverage target:** ≥ 80% for `src/features/**`.
-- **E2E:** Playwright tests cover every critical user journey end-to-end
-  (sign-up → create routine → check in → view dashboard; mentor → view with
-  consent → comment).
-- **Bug fixes** start with a failing regression test.
-
-### 7.2 Test Pyramid
-| Level       | Tool                                | Scope                        |
-|-------------|-------------------------------------|------------------------------|
-| Unit        | pytest / Vitest                     | Functions, composables       |
-| Integration | pytest + httpx + testcontainers     | API + DB + queue             |
-| Contract    | Schemathesis (backend) / MSW (front)| API contract parity          |
-| E2E         | Playwright                          | Browser flows                |
-
-### 7.3 Test Naming
-- Backend: `test_<unit>_<scenario>_<expected>()`
-- Frontend: `describe("<Component>") / it("should …")`
-- Feature tests reference SPEC acceptance criteria by ID,
-  e.g. `# SPEC-AC-03` in a docstring/comment.
-
----
-
-## 8. Coding Standards
-
-### 8.1 Backend (Python / FastAPI)
-- **Async everywhere**; never call blocking I/O in async paths.
-- **No business logic in routers** — routers call `domain/services`.
-- **Pydantic schemas** for all I/O; never expose ORM models directly.
-- **Explicit return types**; `mypy --strict` must pass.
-- **Dependency Injection** via FastAPI `Depends`; no globals.
-- **Error handling:** raise domain exceptions; a single exception handler
-  maps them to the standard error envelope (see §10).
-- **Config:** via `pydantic-settings`; secrets never in code or git.
-- **Logging:** `structlog` JSON in prod, human-readable in dev.
-  Never log secrets/PII.
-- **SQLAlchemy:** models in `infrastructure/db/models/`; all queries via
-  repository pattern in `infrastructure/db/repositories/`.
-
-### 8.2 Frontend (Vue 3 + TS)
-- `<script setup lang="ts">` only. No Options API.
-- Components are **presentational** or **feature-scoped**; no cross-feature
-  imports.
-- **State:** Pinia per-feature store; global stores only for auth & theme.
-- **API calls** centralized in `src/shared/api/http.ts` with typed clients
-  per feature in `features/<name>/api/`.
-- **Types:** shared API types in `src/shared/types/api.ts` (mirror backend
-  schemas — ideally generated via `openapi-typescript`).
-- **Styling:** TailwindCSS utility-first; no inline styles; design tokens
-  in `tailwind.config.ts`.
-- **Accessibility:** WCAG 2.1 AA minimum (labels, focus states, keyboard
-  nav, ARIA where required).
-
-### 8.3 General
-- Max function length: **50 lines**. Max file length: **400 lines**.
-- No commented-out code. No `TODO` without a linked issue.
-- No magic numbers/strings — use named constants.
-- No `console.log` / `print` in production code paths.
-
----
-
-## 9. Git & Branching
-
-- **Branches:**
-  - `main` — always deployable.
-  - `feature/<NNN>-<slug>` — new features.
-  - `fix/<short-slug>` — bug fixes.
-  - `chore/<short-slug>` — non-functional.
-  - `docs/<short-slug>` — docs only.
-- **Commits:** [Conventional Commits](https://www.conventionalcommits.org/):
-  `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `perf:`.
-  Scope is the feature ID when applicable: `feat(002): add routine CRUD`.
-- **PRs:**
-  - Title mirrors the commit style.
-  - Body links the SPEC and PLAN.
-  - CI must be green (lint, type-check, tests, build).
-  - At least 1 reviewer (or self-review checklist for solo mode).
-  - Squash-merge into `main`.
-
----
-
-## 10. API Design Guidelines
-
-- **REST, JSON, `/api/v1`** prefix.
-- **Resource-oriented URLs:** `/users`, `/routines`, `/check-ins`,
-  `/mentors`, `/admin/users`.
-- **HTTP verbs:** GET (safe), POST (create), PUT/PATCH (update), DELETE.
-- **Status codes:** 200, 201, 204, 400, 401, 403, 404, 409, 422, 429, 500.
-- **Pagination:** cursor-based (`?cursor=&limit=`) with `next_cursor` in
-  response.
-- **Filtering & sorting:** explicit query params, documented in SPEC.
-- **Idempotency:** POST endpoints that create billable/booked resources accept
-  `Idempotency-Key` header.
-- **Error envelope (mandatory):**
-  ```json
-  {
-    "error": {
-      "code": "RESOURCE_NOT_FOUND",
-      "message": "Routine not found",
-      "details": { "id": "..." },
-      "request_id": "..."
-    }
-  }
-  ```
-- **OpenAPI:** generated at `/api/v1/openapi.json`; frontend types derived
-  from it.
-- **Breaking changes** require a new API version AND an ADR.
-
----
-
-## 11. Database & Migrations
-
-- **Every schema change** goes through Alembic; **no manual SQL**.
-- **Naming:** snake_case tables and columns; plural table names.
-- **Migrations are forward-only** in `main`; write a companion downgrade
-  when safe.
-- **No destructive migration** (drop table/column) without an ADR and a
-  data migration plan.
-- **Time zones:** store all timestamps in **UTC**, `TIMESTAMPTZ`; users
-  store their preferred time zone as IANA string. **ADR covers this.**
-- **Soft delete** for user-facing records via `deleted_at TIMESTAMPTZ NULL`.
-- **Indexes:** every FK is indexed; every unique constraint documented in
-  SPEC.
-- **RBAC storage:** role stored on `users.role` enum; mentor↔user relationship
-  in a dedicated table with `granted_at` and `revoked_at` timestamps.
-
----
-
-## 12. Security Checklist
-
-Before marking any feature **Done**, verify:
-
-- [ ] Input validated server-side (Pydantic) and client-side (zod).
-- [ ] AuthN & AuthZ enforced on every non-public endpoint.
-- [ ] **RBAC enforced:** User / Mentor / Admin role checks on every protected
-      route.
-- [ ] **Ownership checks:** users can only access their own routines and
-      check-ins.
-- [ ] **Consent-based mentor access:** mentor can only view a user's data if
-      an active consent record exists; revoking consent immediately blocks
-      access.
-- [ ] **Plan limits enforced server-side** (e.g., free tier routine count
-      limit), never trusted from client.
-- [ ] **Admin endpoints** protected by `admin` role only, audited in logs.
-- [ ] No secrets in code, logs, or git history.
-- [ ] Rate limiting on auth & public endpoints.
-- [ ] CSRF protection if cookie-based auth is used.
-- [ ] SQL injection prevented (ORM/parameterized queries only).
-- [ ] XSS prevented (no `v-html` on user input; sanitize markdown).
-- [ ] Dependency vulnerabilities checked (`pip-audit`, `npm audit`).
-- [ ] PII redaction in logs.
-
----
-
-## 13. Observability
-
-- **Structured logs** with `request_id`, `user_id`, `role` (when known).
-- **Health endpoints:** `/healthz` (liveness), `/readyz` (readiness).
-- **Metrics:** `prometheus-fastapi-instrumentator` for latency & error rates.
-- **Tracing:** OpenTelemetry hooks (opt-in via env).
-- **Audit log:** role-changing and consent-granting/revoking actions must be
-  logged to a dedicated audit stream.
-
----
-
-## 14. Feature Development Lifecycle (Concrete Example)
-
-Let's say we want to add **Feature 003 — Routine CRUD**.
-
-1. Append to `Task-List.md` under "Backlog":
-   `| 003 | Routine CRUD | docs/features/003-routine-crud/SPEC.md | docs/features/003-routine-crud/PLAN.md | TBD | Backlog |`
-2. Create `docs/features/003-routine-crud/SPEC.md` (user stories,
-   acceptance criteria, API contract, data model, edge cases).
-3. Create `docs/features/003-routine-crud/PLAN.md` (task list, test list,
-   ADRs needed, risks).
-4. Create ADRs if needed, e.g. `0005-routine-data-model.md`.
-5. `git switch -c feature/003-routine-crud`.
-6. **TDD:** write a failing test → run → see Red → implement minimal code →
-   Green → refactor → repeat.
-7. Open PR, get CI green, merge.
-8. Update `Task-List.md` status → `Done`.
-
----
-
-## 15. Definition of Done
-
-A feature is **Done** only when **all** of these are true:
-
-- [ ] `SPEC.md` and `PLAN.md` exist and match the shipped behavior.
-- [ ] All ADRs for the feature are written and referenced in the PLAN.
-- [ ] Unit + integration + E2E tests exist and pass.
-- [ ] Coverage thresholds met (§7.1).
-- [ ] `mypy --strict`, `ruff`, `eslint`, `tsc --noEmit` pass.
-- [ ] No new `TODO`s without linked issues.
-- [ ] Security checklist (§12) verified — **including RBAC & consent checks**.
-- [ ] API contract updated in OpenAPI; frontend types regenerated.
-- [ ] `Task-List.md` updated → `Done`.
-- [ ] Demo/demo link recorded in PR (for UI features).
-
----
-
-## 16. Templates
-
-### 16.1 ADR Template (`docs/adr/NNNN-title.md`)
-
-```markdown
-# NNNN. <Short Title>
-
-- **Status:** Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
-- **Date:** YYYY-MM-DD
-- **Deciders:** @…
-- **Related:** SPEC-…, PLAN-…
-
-## Context
-What is the problem / force at play?
-
-## Decision
-What did we decide to do?
-
-## Consequences
-### Positive
-### Negative
-### Neutral
-
-## Alternatives Considered
-- Option A — pros/cons
-- Option B — pros/cons
-```
-
-### 16.2 SPEC Template (`docs/features/NNN-slug/SPEC.md`)
-
-```markdown
-# SPEC — <Feature Name>
-
-- **Feature ID:** NNN
-- **Status:** Draft | Review | Approved | Implemented
-- **Owner:**
-- **Related ADRs:**
-- **Last updated:** YYYY-MM-DD
-
-## 1. Summary
-## 2. Motivation / Why
-## 3. User Stories
-- US-01: As a … I want … so that …
-## 4. Acceptance Criteria
-- AC-01 (given/when/then)
-## 5. Functional Requirements
-## 6. Non-Functional Requirements (perf, security, a11y, i18n, tz)
-## 7. API Contract (endpoints, schemas, errors, examples)
-## 8. Data Model (tables, fields, indexes, constraints)
-## 9. UI / UX Flows (wireframes, states, empty/error/loading)
-## 10. Edge Cases
-## 11. Out of Scope
-## 12. Open Questions
-```
-
-### 16.3 PLAN Template (`docs/features/NNN-slug/PLAN.md`)
-
-```markdown
-# PLAN — <Feature Name>
-
-- **Feature ID:** NNN
-- **SPEC:** ./SPEC.md
-- **Status:** Draft | Approved | In Progress | Done
-
-## 1. Technical Approach
-## 2. Architecture & Decisions
-- Introduces ADR-XXXX: …
-## 3. Dependencies & Rationale
-- `<package>` — used for …; alternatives considered …
-## 4. TDD Test List (Red-first)
-### Backend
-- [ ] test_<…>
-### Frontend
-- [ ] should <…>
-### E2E
-- [ ] flow: sign-up → …
-## 5. Task Breakdown
-- [ ] Backend: domain model
-- [ ] Backend: repository
-- [ ] Backend: service
-- [ ] Backend: API endpoint
-- [ ] Backend: migration
-- [ ] Frontend: API client
-- [ ] Frontend: store/composables
-- [ ] Frontend: UI components
-- [ ] Frontend: page wiring
-- [ ] E2E
-- [ ] Docs update
-## 6. Risks & Mitigations
-## 7. Rollback Plan
-## 8. Definition of Done (link to §15)
-```
-
----
-
-## 17. Ground Rules for AI Agents (and Humans)
-
-1. **Never write production code without a SPEC + PLAN.**
-2. **Never write production code without a failing test first.**
-3. **Never make an architectural decision without an ADR.**
-4. **Never skip updating `Task-List.md`.**
-5. **Ask, don't guess.** If a requirement is ambiguous, request clarification
-   before proceeding.
-6. **Prefer the smallest viable change.** Small PRs, clear diffs.
-7. **Documentation outlives code** — when in doubt, write it down.
-8. **No `git push --force` to shared branches.**
-9. **No secrets, ever.** Use `.env.example` for documentation.
-10. **Leave the codebase better than you found it** — but scope refactors in
-    their own `chore/` PR.
-
----
-
-_Last updated: v1.1 — added Routine Manager scope, RBAC, mobile, subscriptions._
+# AGENTS.md — Engineering Rules for AI Agents
+
+## 1. Mission and product context
+
+You are contributing to a production-minded online **routine-management platform** for individuals and mentors. The system has three primary user roles:
+
+1. **User (regular)** — creates and tracks daily/weekly/monthly routines and habits; checks in; manages subscription; grants or revokes mentor access.
+2. **Mentor** — is discovered and selected by users; views a user's routines and progress **only with that user's explicit, revocable consent**; leaves comments and sends messages.
+3. **Platform Administrator** — manages users, subscription plans, platform-wide configuration, and auditability; accesses the web-only admin panel.
+
+The product is a behavioral-habit and routine-tracking platform, not merely a to-do list. Correctness of **time and time zone** (daily boundaries, weekly patterns, streaks, reminders), authorization, **consent-based privacy**, **plan-limit enforcement**, and auditability are critical.
+
+Your job is to make the smallest correct, maintainable, secure change that satisfies an approved specification. Do not silently expand scope.
+
+## 2. Source-of-truth hierarchy
+
+When instructions conflict, use this order:
+
+1. Explicit user instruction for the current task.
+2. Approved feature `SPEC.md`.
+3. Approved feature `PLAN.md`.
+4. Accepted ADRs in `docs/adr/`.
+5. `docs/SRS.md` and `docs/ARCHITECTURE.md`.
+6. Existing implementation and tests.
+7. Your assumptions.
+
+Never treat an assumption as an approved requirement. Record unresolved product or technical questions in the feature spec and ask for clarification when the answer changes data integrity, security, user-visible behavior, or scope.
+
+## 3. Mandatory feature intake gate
+
+Before implementing any new feature or material behavior change:
+
+1. Read this file and the relevant architecture, SRS, ADRs, and existing code.
+2. Add the feature to `Task-List.md` with a unique ID (`F-###`), owner/status, dependencies, priority, and links to its documents.
+3. Create a feature folder: `docs/features/F-###-short-name/`.
+4. Create both `SPEC.md` and `PLAN.md` in that folder.
+5. In `SPEC.md`, define problem, actors, scope, non-goals, user journey, requirements, business rules, API/UI behavior, data impact, security/privacy, edge cases, and measurable acceptance criteria.
+6. In `PLAN.md`, list ordered implementation steps, tests to write first, migration/rollback approach, documentation changes, and completion checks.
+7. Identify architectural decisions. If a decision changes system boundaries, data model strategy, consistency, security, deployment, integrations, or a long-lived dependency, create an ADR under `docs/adr/`. If no ADR is needed, state why in the plan.
+8. Obtain human approval of the specification and plan when the work changes product behavior, data contracts, security, or architecture.
+9. Only then begin implementation.
+
+Do not create empty placeholder specs merely to bypass this gate. A small bug fix may use a lightweight issue entry, but any behavior change or feature still requires an explicit test and documented expected behavior.
+
+## 4. Required development method: TDD
+
+Use Red → Green → Refactor for every behavior change:
+
+1. **Red:** Write a focused test that expresses the required behavior and fails for the expected reason.
+2. **Green:** Implement the minimum code needed to pass the test.
+3. **Refactor:** Improve structure without changing behavior; keep the tests green.
+4. Add regression tests for discovered defects.
+5. Run the relevant test suite after each meaningful change.
+
+Do not write implementation first and retroactively add superficial tests. Tests must assert observable behavior, not private implementation details.
+
+### Test layers
+
+- Unit tests: pure business rules, validation, schedule evaluation, streak computation, plan-limit evaluation, time-zone math.
+- Integration tests: database repositories, transactions, API endpoints, migrations, external adapter contracts.
+- Contract tests: API schemas and integration payloads.
+- End-to-end tests: critical journeys across browser and API (sign-up → create routine → check-in → dashboard; mentor consent grant → mentor view → comment).
+- Security tests: authorization boundaries, object-level access, consent enforcement, plan-limit bypass attempts, input validation, rate limits, and session/token behavior.
+- Time-zone tests: DST transitions, user time-zone change mid-streak, weekly routines across DST, reminder firing across DST.
+
+SQLite is useful for fast local tests, but it is not a substitute for PostgreSQL integration tests. Do not claim production-grade time-zone or concurrency correctness based only on SQLite test results.
+
+## 5. Architecture principles
+
+- Start with a **modular monolith** and explicit domain boundaries (Identity, Routine, Check-in, Mentor, Subscription, Admin).
+- Keep business rules out of FastAPI route handlers and Vue components.
+- Separate API, application/use-case, domain, and infrastructure concerns.
+- Depend on interfaces/ports in application logic; isolate database, email, push-notification, and payment vendors behind adapters.
+- Use dependency injection at module boundaries.
+- Prefer boring, proven technology over novelty.
+- Avoid premature microservices, event sourcing, CQRS, distributed locks, and unnecessary abstractions.
+- Make important side effects explicit and observable (e.g., audit log for consent changes).
+- Use UTC for persisted instants; preserve IANA timezone identifiers for users and for interpreting routine schedules and daily boundaries.
+- Never assume a local wall-clock date uniquely identifies a day across time zones.
+- A user's "local day" for a check-in is determined by their **stored IANA time zone at the time of check-in**, not by the server's time zone.
+
+## 6. Backend rules
+
+- Use Python type hints throughout production code.
+- Use FastAPI routers only for HTTP concerns: parsing, authentication context, response mapping, and status codes.
+- Put use cases in application services and invariants in domain logic.
+- Use Pydantic request/response schemas; never expose ORM objects directly.
+- Use SQLAlchemy 2.x typed mappings and explicit transaction boundaries.
+- Use Alembic for every schema change. Never rely on `create_all()` in production.
+- Keep database sessions request-scoped and close them reliably.
+- Do not perform network calls while holding a database transaction or row lock.
+- Use stable error codes and a consistent error response envelope.
+- Validate ownership, role, and **consent** server-side on every protected operation.
+- Use pagination for potentially unbounded collections.
+- Use idempotency keys for check-in creation and other retry-sensitive commands.
+- Do not log passwords, access tokens, private routine notes, mentor messages, or unnecessary personal data.
+
+## 7. Routine and time correctness rules
+
+Routine and time correctness is a critical invariant:
+
+- A user must have at most one active check-in per routine per **local calendar day**. The "day" is defined in the user's current IANA time zone at check-in time. Store each check-in with: the UTC instant, the user's IANA time zone at the time of check-in, and a denormalized `local_date` (`YYYY-MM-DD`) for uniqueness.
+- Check-in uniqueness is enforced by a **database unique constraint** on `(routine_id, local_date)`. Never rely on frontend checks or application-only validation.
+- Weekly/monthly routines are scheduled by **day-of-week and/or day-of-month in the user's IANA time zone**. Never assume UTC Monday is local Monday.
+- Streaks (consecutive completed days) are computed in the user's time zone. DST transitions must not break a streak: a 23-hour or 25-hour day still counts as one local day.
+- When a user changes their time zone, existing check-ins **retain their original local date and time zone**. New check-ins use the new time zone. Streak computation uses each check-in's stored `local_date`.
+- Reminders fire at the **user's local time** for the configured routine. Reminder scheduling must explicitly handle DST gaps and repeated local times; never silently guess.
+- Routine start and end dates are stored as **local dates in the user's time zone**, not UTC instants.
+- A routine must retain a snapshot of material terms at check-in time (routine name, target frequency, plan tier at the time) so later edits do not rewrite historical completion-rate computation.
+- Handle duplicate client retries with idempotency keys on check-in creation.
+- Never rely on the frontend to determine the user's local day; use the **stored** user time zone (updatable via a dedicated endpoint).
+
+## 8. Frontend rules
+
+- Use Vue 3 Composition API with TypeScript and `<script setup>`.
+- Keep pages, reusable components, composables, API clients, stores, and domain-specific view models separate.
+- Use Pinia for shared client state only where needed; do not mirror all server state globally.
+- Use a typed API client generated from or checked against the OpenAPI schema.
+- Centralize authentication handling, error mapping, and request correlation.
+- Validate forms for usability, but treat backend validation as authoritative.
+- Provide loading, empty, success, error, and retry states.
+- Ensure keyboard navigation, semantic HTML, visible focus, labels, and accessible error messages.
+- Do not put authorization decisions only in the UI. Mentor-viewing-user-data must be re-checked server-side on every request.
+- Avoid giant components and duplicated business logic.
+
+## 9. API and compatibility
+
+- Prefix public APIs with `/api/v1`.
+- Use explicit request and response schemas.
+- Use consistent naming, status codes, pagination, filtering, and error structures.
+- Do not make breaking API changes without a documented migration/deprecation plan.
+- Keep OpenAPI accurate and review generated schema changes.
+- Use UTC ISO 8601 timestamps in API payloads; include the IANA time-zone identifier where local-day interpretation is required.
+- Expose a dedicated `PUT /api/v1/me/timezone` for changing the user's time zone.
+
+## 10. Security and privacy baseline
+
+- Apply least privilege and deny by default.
+- Enforce **RBAC** (`User`, `Mentor`, `Admin`) and **resource ownership** in backend use cases.
+- Enforce **consent-based mentor access**: a mentor can only read a user's routines, check-ins, and progress when an **active, non-revoked** consent record exists. Revoking consent blocks access on the very next request.
+- Enforce **plan limits server-side**: free-tier limits (e.g., active routine count, mentor access availability) are validated in the application service, never trusted from the client.
+- **Admin endpoints** must be gated by `admin` role and produce an **audit entry** for every mutation.
+- Hash passwords using a modern password-hashing algorithm such as Argon2id via a maintained library.
+- Use secure, HttpOnly, SameSite cookies for browser sessions where feasible; if using bearer tokens, define refresh, revocation, storage, and CSRF/XSS mitigations in an ADR.
+- Protect state-changing cookie-authenticated requests against CSRF.
+- Rate-limit login, password reset, public endpoints, and check-in creation.
+- Verify email addresses before enabling sensitive account actions.
+- Use short-lived, single-use password-reset tokens.
+- Validate uploads by type, size, and content; store outside the web root.
+- Keep secrets out of source control and frontend bundles.
+- Maintain **audit records for privileged actions**: role changes, consent grants/revocations, plan changes, and admin actions.
+- Define retention, export, and deletion processes for personal data.
+- Do not claim legal compliance (GDPR or otherwise) without a documented legal and operational review.
+
+## 11. Database and migrations
+
+- SQLite is the default local development database and may be used for fast unit/integration tests that do not depend on PostgreSQL-specific behavior.
+- PostgreSQL is the production database and the authoritative database for concurrency, locking, JSON behavior, and production migration validation.
+- Use SQLAlchemy 2.x and Alembic.
+- Keep migrations deterministic, reviewed, and reversible where practical.
+- Test migrations from the previous released schema against PostgreSQL.
+- Avoid SQLite-specific SQL in application logic.
+- Use portable types and constraints where possible; isolate PostgreSQL-specific features behind migrations/repositories and document them.
+- The check-in unique constraint `(routine_id, local_date)` is portable and must be enforced in both SQLite and PostgreSQL.
+- Never use SQLite in production.
+
+## 12. External integrations and side effects
+
+- Email, push notification (Android via FCM), and payment providers must be behind adapter interfaces.
+- Use an outbox pattern for reliable delivery of notifications and reminders when required.
+- Do not send an email, push notification, or call a payment API before the database transaction commits.
+- Make webhook handlers (e.g., payment provider) authenticated, idempotent, and replay-safe.
+- Store external event IDs and synchronization status.
+- Retry transient failures with bounded exponential backoff; route exhausted failures to a reviewable failure state.
+- For MVP (no Redis), use `FastAPI BackgroundTasks` for notification dispatch. When scale demands a durable queue, introduce one behind an approved ADR.
+
+## 13. Observability and operations
+
+- Use structured logs with request/correlation IDs and (where known) `user_id` and `role`.
+- Expose health and readiness endpoints without leaking internals.
+- Record metrics for API latency, error rates, check-in conflicts, reminder failures, and integration failures.
+- Maintain a **separate audit log** for role changes, consent grants/revocations, plan changes, and admin actions.
+- Use traces where the deployment complexity justifies them.
+- Provide database backups, restore tests, migration procedures, and an incident runbook before production launch.
+- Define retention and redaction for logs.
+- Do not add monitoring infrastructure without a concrete operational requirement.
+
+## 14. Code quality
+
+- Follow the repository's formatter, linter, and type-checker configuration.
+- Prefer clear names and small functions with one responsibility.
+- Avoid broad exception catches; translate known exceptions at boundaries.
+- Never suppress a failing test or weaken an assertion just to obtain a green build.
+- Do not add dependencies without explaining why, checking maintenance/security posture, and updating the relevant ADR when material.
+- Remove dead code and unused dependencies introduced by your change.
+- Do not add TODO comments as a substitute for completing required work. If deferred, create a tracked task.
+
+## 15. Required workflow for every task
+
+Before editing:
+- Inspect repository structure, relevant modules, tests, and docs.
+- Read linked SPEC, PLAN, and ADRs.
+- Confirm the task is approved and not blocked.
+- State assumptions and likely files to change in your work plan.
+
+During work:
+- Follow TDD.
+- Keep changes scoped.
+- Update tests, API schemas, migrations, docs, and examples together.
+- Never fabricate command output or claim tests ran if they did not.
+
+Before completion:
+- Run formatter and linter.
+- Run type checks.
+- Run focused tests, then the relevant full suite.
+- Run PostgreSQL integration/time-zone tests when the feature touches persistence, scheduling, or check-ins.
+- Review migration upgrade and rollback behavior.
+- Check authorization, consent, and privacy implications.
+- Update `Task-List.md`, feature `PLAN.md`, and relevant docs.
+- Report exactly what changed, commands actually run, results, known limitations, and follow-up tasks.
+
+## 16. Definition of Ready (DoR)
+
+A feature is Ready only when:
+- It has a Task-List entry and unique `F-###` ID.
+- `SPEC.md` and `PLAN.md` exist and are reviewed.
+- User journey and acceptance criteria are testable.
+- Dependencies and non-goals are explicit.
+- Data/API/security/consent/plan-limit implications are identified.
+- Required ADRs exist or the plan records why none is required.
+- Test strategy is defined, including PostgreSQL and time-zone tests when relevant.
+
+## 17. Definition of Done (DoD)
+
+A feature is Done only when:
+- All acceptance criteria pass.
+- TDD evidence exists in the test suite.
+- Relevant unit, integration, and E2E tests pass.
+- PostgreSQL-specific and time-zone tests pass where applicable.
+- Authorization, consent, plan-limit, validation, error, and edge cases are covered.
+- Migrations and rollback notes are complete.
+- API documentation and user-facing behavior are updated.
+- Logs/metrics/audit entries are adequate for operations.
+- No known critical security or data-integrity defect remains.
+- `Task-List.md` and `PLAN.md` are updated.
+- The agent provides an honest completion report.
+
+## 18. Agent communication protocol
+
+For each task, report:
+1. Task ID and linked specification.
+2. Understanding of expected behavior.
+3. Assumptions and unresolved questions.
+4. Planned files/modules and tests.
+5. Implementation summary.
+6. Tests and commands actually executed with results.
+7. Migration/operational impact.
+8. Remaining risks or follow-up tasks.
+
+If asked to implement a feature without its SPEC/PLAN, stop at the intake gate and create or request approval for those documents. Do not bypass this rule because the requested change appears small.

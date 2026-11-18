@@ -1,96 +1,69 @@
-# Task List — Routine Manager
+# Task List
 
-> **Rules**
-> - Every new feature is **registered here first** (status: `Backlog`) before any
->   work begins.
-> - Feature folder name: `docs/features/<NNN>-<slug>/`.
-> - Every feature must have `SPEC.md` + `PLAN.md` linked before status becomes
->   `In Progress`.
-> - Every architectural decision is an ADR in `docs/adr/`.
-> - Update this file **in the same commit** as the state change.
+This file is the project-wide intake and delivery control. Every feature must be registered here before implementation. A task is not Ready until its `SPEC.md` and `PLAN.md` exist and are reviewed.
 
-Legend: 🟦 Backlog · 🟨 In Progress · 🟪 In Review · 🟩 Done · 🔴 Blocked
+## Status definitions
 
----
+- `Proposed` — captured, not yet specified.
+- `Specifying` — SPEC/PLAN are being prepared.
+- `Review` — awaiting product/architecture approval.
+- `Ready` — approved and eligible for implementation.
+- `In Progress` — implementation underway using TDD.
+- `Blocked` — waiting for a dependency or decision.
+- `In Review` — implementation complete, awaiting review/verification.
+- `Done` — Definition of Done satisfied.
+- `Deferred` — intentionally postponed with rationale.
 
-## 📌 Backlog
+## Priority definitions
 
-| ID  | Feature | SPEC | PLAN | ADRs | Status | Notes |
-|-----|---------|------|------|------|--------|-------|
-| 001 | User Authentication (sign-up/login/JWT) | docs/features/001-user-auth/SPEC.md | docs/features/001-user-auth/PLAN.md | 0003 | 🟦 Backlog | Foundation for everything |
-| 002 | RBAC & Roles (User/Mentor/Admin) | docs/features/002-rbac/SPEC.md | docs/features/002-rbac/PLAN.md | TBD | 🟦 Backlog | Depends on 001 |
-| 003 | Routine CRUD | docs/features/003-routine-crud/SPEC.md | docs/features/003-routine-crud/PLAN.md | TBD | 🟦 Backlog | Core domain |
-| 004 | Routine Scheduling (recurring) | docs/features/004-routine-scheduling/SPEC.md | docs/features/004-routine-scheduling/PLAN.md | TBD | 🟦 Backlog | Needs 003 |
-| 005 | Check-in Tracking | docs/features/005-check-in-tracking/SPEC.md | docs/features/005-check-in-tracking/PLAN.md | TBD | 🟦 Backlog | Needs 003 |
-| 006 | Dashboard & Analytics | docs/features/006-dashboard/SPEC.md | docs/features/006-dashboard/PLAN.md | TBD | 🟦 Backlog | Needs 005 |
-| 007 | Reminders & Notifications (email + push) | docs/features/007-notifications/SPEC.md | docs/features/007-notifications/PLAN.md | TBD | 🟦 Backlog | Needs 005 |
-| 008 | Mentor Discovery & Selection | docs/features/008-mentor-discovery/SPEC.md | docs/features/008-mentor-discovery/PLAN.md | TBD | 🟦 Backlog | Needs 002 |
-| 009 | Mentor Access (consent-based) | docs/features/009-mentor-access/SPEC.md | docs/features/009-mentor-access/PLAN.md | TBD | 🟦 Backlog | Needs 002, 003, 008 |
-| 010 | Mentor Messaging & Comments | docs/features/010-mentor-messaging/SPEC.md | docs/features/010-mentor-messaging/PLAN.md | TBD | 🟦 Backlog | Needs 009 |
-| 011 | Subscription Plans (Free/Paid) | docs/features/011-subscriptions/SPEC.md | docs/features/011-subscriptions/PLAN.md | TBD | 🟦 Backlog | Needs 002 |
-| 012 | Admin Panel (web only) | docs/features/012-admin-panel/SPEC.md | docs/features/012-admin-panel/PLAN.md | TBD | 🟦 Backlog | Needs 002, 011 |
-| 013 | Android App | docs/features/013-android-app/SPEC.md | docs/features/013-android-app/PLAN.md | 0004 | 🟦 Backlog | **Blocked on ADR-0004** (tech stack) |
-| 014 | Team / Group Routines | docs/features/014-team-routines/SPEC.md | docs/features/014-team-routines/PLAN.md | TBD | 🟦 Backlog | Optional, future |
+- `P0` — release blocker, security, or core data integrity.
+- `P1` — required for first usable release.
+- `P2` — valuable, can follow initial release.
+- `P3` — optional enhancement.
 
----
+## Feature intake checklist
 
-## 🟨 In Progress
+For every new feature:
+- [ ] Assign a unique ID (`F-###`).
+- [ ] Add the task below with priority, dependencies, status, and links.
+- [ ] Create `docs/features/F-###-short-name/SPEC.md`.
+- [ ] Create `docs/features/F-###-short-name/PLAN.md`.
+- [ ] Define user/mentor/admin journey as applicable.
+- [ ] Add testable acceptance criteria and edge cases.
+- [ ] Identify data, API, authorization, consent, privacy, and operational impact.
+- [ ] Create required ADR(s), or document why no ADR is needed.
+- [ ] Review and approve before implementation.
+- [ ] Implement Red → Green → Refactor.
+- [ ] Update this list and the feature PLAN at completion.
 
-| ID  | Feature | SPEC | PLAN | ADRs | Status | Owner | Started |
-|-----|---------|------|------|------|--------|-------|---------|
-| —   |         |      |      |      |        |       |         |
+## Initial project backlog
 
----
+| ID | Feature / Workstream | Priority | Status | Dependencies | Specification | Plan |
+|---|---|---:|---|---|---|---|
+| F-001 | Repository foundation, tooling, configuration, CI | P0 | Proposed | — | `docs/features/F-001-foundation/SPEC.md` | `docs/features/F-001-foundation/PLAN.md` |
+| F-002 | Identity, registration, login, sessions, password reset, email verification | P0 | Proposed | F-001 | `docs/features/F-002-identity/SPEC.md` | `docs/features/F-002-identity/PLAN.md` |
+| F-003 | Role-based access control — User / Mentor / Admin | P0 | Proposed | F-002 | `docs/features/F-003-rbac/SPEC.md` | `docs/features/F-003-rbac/PLAN.md` |
+| F-004 | User profile, onboarding, time-zone preference | P0 | Proposed | F-002 | `docs/features/F-004-profile/SPEC.md` | `docs/features/F-004-profile/PLAN.md` |
+| F-005 | Routine CRUD — create, edit, archive, delete | P0 | Proposed | F-003, F-004 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
+| F-006 | Routine scheduling — recurring patterns (daily/weekly/monthly) | P0 | Proposed | F-005 | `docs/features/F-006-routine-scheduling/SPEC.md` | `docs/features/F-006-routine-scheduling/PLAN.md` |
+| F-007 | Check-in tracking — mark done/not done with optional note | P0 | Proposed | F-006 | `docs/features/F-007-check-in/SPEC.md` | `docs/features/F-007-check-in/PLAN.md` |
+| F-008 | Dashboard, streaks, and analytics | P1 | Proposed | F-007 | `docs/features/F-008-dashboard/SPEC.md` | `docs/features/F-008-dashboard/PLAN.md` |
+| F-009 | Reminders and notifications — email + Android push (FCM) | P1 | Proposed | F-007 | `docs/features/F-009-notifications/SPEC.md` | `docs/features/F-009-notifications/PLAN.md` |
+| F-010 | Mentor discovery — browse and select a mentor | P1 | Proposed | F-003 | `docs/features/F-010-mentor-discovery/SPEC.md` | `docs/features/F-010-mentor-discovery/PLAN.md` |
+| F-011 | Mentor access — consent-based, revocable | P0 | Proposed | F-003, F-005 | `docs/features/F-011-mentor-access/SPEC.md` | `docs/features/F-011-mentor-access/PLAN.md` |
+| F-012 | Mentor messaging and comments | P1 | Proposed | F-011 | `docs/features/F-012-mentor-messaging/SPEC.md` | `docs/features/F-012-mentor-messaging/PLAN.md` |
+| F-013 | Subscription plans (Free / Paid) and plan-limit enforcement | P1 | Proposed | F-003 | `docs/features/F-013-subscriptions/SPEC.md` | `docs/features/F-013-subscriptions/PLAN.md` |
+| F-014 | Admin panel — user management, plan management, monitoring | P1 | Proposed | F-003, F-013 | `docs/features/F-014-admin/SPEC.md` | `docs/features/F-014-admin/PLAN.md` |
+| F-015 | Android app — notifications, check-ins, routine viewing | P1 | Proposed | F-007, F-009 | `docs/features/F-015-android/SPEC.md` | `docs/features/F-015-android/PLAN.md` |
+| F-016 | Team / group routines | P2 | Proposed | F-007 | `docs/features/F-016-team-routines/SPEC.md` | `docs/features/F-016-team-routines/PLAN.md` |
+| F-017 | Production hardening — backup/restore, observability, security review | P0 | Proposed | F-001–F-014 | `docs/features/F-017-production-readiness/SPEC.md` | `docs/features/F-017-production-readiness/PLAN.md` |
 
-## 🟪 In Review
+## Current sprint
 
-| ID  | Feature | PR  | Status | Reviewer |
-|-----|---------|-----|--------|----------|
-| —   |         |     |        |          |
+No sprint has been committed yet. Select work only from tasks whose status is `Ready`.
 
----
+## Change log
 
-## 🟩 Done
-
-| ID  | Feature | Merged | ADRs |
-|-----|---------|--------|------|
-| —   |         |        |      |
-
----
-
-## 🚫 Blocked
-
-| ID  | Feature | Blocked By | Reason |
-|-----|---------|------------|--------|
-| 013 | Android App | ADR-0004 | Mobile tech stack not yet decided |
-
----
-
-## 📚 ADR Index
-
-| ADR  | Title | Status | Date |
-|------|-------|--------|------|
-| 0001 | Record architecture decisions | Accepted | TBD |
-| 0002 | Use FastAPI + async SQLAlchemy | Proposed | TBD |
-| 0003 | Choose JWT over server sessions | Proposed | TBD |
-| 0004 | Mobile tech stack (Flutter/RN/Kotlin) | **TBD** | — |
-| 0005 | RBAC model & storage | TBD | — |
-| 0006 | Consent-based mentor access model | TBD | — |
-
-> Keep this index in sync with `docs/adr/`.
-
----
-
-## 📝 How to add a new feature (checklist)
-
-1. [ ] Add a row to **Backlog** with a unique ID (`NNN`) and a slug.
-2. [ ] Create `docs/features/NNN-<slug>/SPEC.md` from the template in
-       `AGENTS.md §16.2`.
-3. [ ] Create `docs/features/NNN-<slug>/PLAN.md` from the template in
-       `AGENTS.md §16.3`.
-4. [ ] Write ADR(s) for architectural decisions introduced
-       (`docs/adr/NNNN-title.md`, `AGENTS.md §16.1`).
-5. [ ] Move the row to **In Progress** and set Owner + Started.
-6. [ ] Branch `feature/NNN-<slug>` and implement with TDD.
-7. [ ] Open PR → **In Review**.
-8. [ ] Merge → move to **Done**, set Merged date.
+| Date | Change |
+|---|---|
+| 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |
