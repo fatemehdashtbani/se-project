@@ -70,6 +70,7 @@
 import { reactive, ref } from 'vue';
 
 const MIN_PASSWORD_LENGTH = 8;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const email = ref('');
 const password = ref('');
@@ -78,7 +79,16 @@ const errors = reactive({ email: '', password: '' });
 const emit = defineEmits<{ submit: [payload: { email: string; password: string }] }>();
 
 function validate(): boolean {
-  errors.email = email.value.trim() === '' ? 'ایمیل الزامی است' : '';
+  const trimmedEmail = email.value.trim();
+
+  if (trimmedEmail === '') {
+    errors.email = 'ایمیل الزامی است';
+  } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+    errors.email = 'فرمت ایمیل معتبر نیست';
+  } else {
+    errors.email = '';
+  }
+
   errors.password =
     password.value.length < MIN_PASSWORD_LENGTH ? 'رمز عبور باید حداقل ۸ کاراکتر باشد' : '';
 

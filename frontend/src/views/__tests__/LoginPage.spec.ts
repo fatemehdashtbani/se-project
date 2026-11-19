@@ -55,6 +55,33 @@ describe('LoginPage (F-002)', () => {
     expect(wrapper.text()).toContain('رمز عبور باید حداقل ۸ کاراکتر باشد');
   });
 
+  it('shows a Persian error when the email is malformed', async () => {
+    const wrapper = mount(LoginPage);
+
+    await fillForm(wrapper, 'notanemail', VALID_PASSWORD);
+    await submit(wrapper);
+
+    expect(wrapper.text()).toContain('فرمت ایمیل معتبر نیست');
+
+    await fillForm(wrapper, 'foo@', VALID_PASSWORD);
+    await submit(wrapper);
+
+    expect(wrapper.text()).toContain('فرمت ایمیل معتبر نیست');
+    expect(wrapper.emitted('submit')).toBeUndefined();
+  });
+
+  it('shows no errors and emits submit when the form is fully valid', async () => {
+    const wrapper = mount(LoginPage);
+
+    await fillForm(wrapper, 'test@example.com', 'password123');
+    await submit(wrapper);
+
+    expect(wrapper.findAll('[role="alert"]')).toHaveLength(0);
+    expect(wrapper.emitted('submit')).toEqual([
+      [{ email: 'test@example.com', password: 'password123' }],
+    ]);
+  });
+
   it('emits a submit event with the credentials when the form is valid', async () => {
     const wrapper = mount(LoginPage);
 

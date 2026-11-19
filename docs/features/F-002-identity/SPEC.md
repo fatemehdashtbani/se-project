@@ -1,6 +1,6 @@
 # Feature Specification — F-002 Identity & Login UI
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-002
 - Related ADRs: ADR-0005 (JWT), ADR-0008 (FarsiUI)

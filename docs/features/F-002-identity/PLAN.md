@@ -33,6 +33,8 @@ None.
 N/A.
 
 ## 9. Completion checklist
-- [ ] Tests pass.
-- [ ] RTL and Persian text correct.
-- [ ] Linters pass.
+- [x] Tests pass.
+- [x] RTL and Persian text correct.
+- [x] Linters pass.
+
+**Note:** Visual layout (RTL, centering) will be covered by Playwright E2E tests in the Production Readiness phase (F-017).
