@@ -14,6 +14,8 @@ from app.infrastructure.db.models import RefreshToken, User
 
 REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"
+ME_URL = "/api/v1/auth/me"
+LOGOUT_URL = "/api/v1/auth/logout"
 
 PASSWORD = "secret123"
 
@@ -24,6 +26,10 @@ async def _register_user(
     return await client.post(REGISTER_URL, json={"email": email, "password": password})
 
 
+async def _login(client: AsyncClient, email: str, password: str = PASSWORD) -> Response:
+    return await client.post(LOGIN_URL, json={"email": email, "password": password})
+
+
 def _set_cookie_headers(response: Response) -> dict[str, str]:
     """Map cookie name to its raw ``Set-Cookie`` header."""
     headers: dict[str, str] = {}
@@ -31,6 +37,13 @@ def _set_cookie_headers(response: Response) -> dict[str, str]:
         name = raw.split("=", 1)[0].strip()
         headers[name] = raw
     return headers
+
+
+def _cookie_payload(header: str) -> str:
+    """Return the (unquoted) value portion of a raw ``Set-Cookie`` header."""
+    pair = header.split(";", 1)[0]
+    _, _, value = pair.partition("=")
+    return value.strip().strip('"')
 
 
 async def test_register_creates_user_with_hashed_password(
@@ -161,3 +174,64 @@ async def test_login_rejects_unknown_email_without_disclosing_it(
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+async def test_me_returns_current_user(client: AsyncClient) -> None:
+    email = "me.valid@example.com"
+    registration = await _register_user(client, email)
+    user_id = registration.json()["id"]
+
+    assert (await _login(client, email)).status_code == 200
+
+    response = await client.get(ME_URL)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": user_id,
+        "email": email,
+        "role": "user",
+        "timezone": "UTC",
+    }
+
+
+async def test_me_requires_authentication(client: AsyncClient) -> None:
+    response = await client.get(ME_URL)
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] in {"UNAUTHORIZED", "NOT_AUTHENTICATED"}
+
+
+async def test_logout_clears_cookies_and_revokes_refresh_token(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "logout@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    assert (await _login(client, email)).status_code == 200
+
+    response = await client.post(LOGOUT_URL)
+
+    assert response.status_code in {200, 204}
+
+    cookie_headers = _set_cookie_headers(response)
+    for name in ("access_token", "refresh_token"):
+        assert name in cookie_headers
+        assert _cookie_payload(cookie_headers[name]) == ""
+        assert "max-age=0" in cookie_headers[name].lower()
+
+    async with db_session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one()
+        tokens = (
+            (
+                await session.execute(
+                    select(RefreshToken).where(RefreshToken.user_id == user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert len(tokens) == 1
+    assert tokens[0].revoked_at is not None
