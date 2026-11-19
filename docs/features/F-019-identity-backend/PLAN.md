@@ -1,4 +1,4 @@
-# Implementation Plan — F-019 Identity Backend
+# Implementation Plan — F-019 Identity Backend — Registration, JWT sessions (Hybrid), Argon2
 
 - Status: Approved
 - Related SPEC: `SPEC.md`
