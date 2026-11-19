@@ -45,8 +45,8 @@ Backend has a single `/healthz`. No metrics yet.
 N/A (initial scaffold).
 
 ## 9. Completion checklist
-- [x] `npm run dev` serves the frontend.
-- [x] `uvicorn` serves `/healthz`.
+- [x] `npm run dev` serves the frontend. — Verified via live server (`vite --port 5173`, `GET http://localhost:5173/login` → 200, `dir="rtl"`).
+- [x] `uvicorn` serves `/healthz`. — Verified via live server (`uvicorn app.main:app --port 8000`, `GET http://127.0.0.1:8000/healthz` → 200, `{"status":"ok"}`).
 - [x] `npm run lint && npm run type-check && npm run test:unit` pass.
 - [x] `ruff check && black --check && mypy && pytest` pass.
 - [x] `.env.example` exists.
