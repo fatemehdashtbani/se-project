@@ -27,7 +27,17 @@ class AppError(Exception):
     code: str = "APPLICATION_ERROR"
     message: str = "Request failed."
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        code: str | None = None,
+        status_code: int | None = None,
+    ) -> None:
+        if code is not None:
+            self.code = code
+        if status_code is not None:
+            self.status_code = status_code
         if message is not None:
             self.message = message
         super().__init__(self.message)

@@ -90,3 +90,18 @@ async def issue_tokens(session: AsyncSession, user: User) -> tuple[str, str]:
     await session.commit()
 
     return access_token, refresh_token
+
+
+async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
+    """Revoke the refresh token matching the presented value, if it is still active."""
+    revoked = await session.scalar(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == hash_refresh_token(token),
+            RefreshToken.revoked_at.is_(None),
+        )
+    )
+    if revoked is None:
+        return
+
+    revoked.revoked_at = datetime.now(UTC)
+    await session.commit()

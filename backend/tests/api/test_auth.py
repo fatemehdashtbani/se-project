@@ -4,12 +4,15 @@ These tests describe the contract from F-019 FR-F019-001, FR-F019-002 and SPEC s
 """
 
 import hashlib
-from datetime import UTC, datetime
+import uuid
+from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient, Response
+from jose import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.config import get_settings
 from app.infrastructure.db.models import RefreshToken, User
 
 REGISTER_URL = "/api/v1/auth/register"
@@ -199,6 +202,26 @@ async def test_me_requires_authentication(client: AsyncClient) -> None:
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] in {"UNAUTHORIZED", "NOT_AUTHENTICATED"}
+
+
+async def test_me_rejects_expired_token(client: AsyncClient) -> None:
+    settings = get_settings()
+    expired_token = jwt.encode(
+        {
+            "sub": str(uuid.uuid4()),
+            "exp": datetime.now(UTC) - timedelta(minutes=1),
+        },
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    response = await client.get(
+        ME_URL,
+        headers={"Cookie": f"access_token={expired_token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "TOKEN_EXPIRED"
 
 
 async def test_logout_clears_cookies_and_revokes_refresh_token(

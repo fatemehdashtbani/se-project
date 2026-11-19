@@ -60,3 +60,14 @@ class UserResponse(BaseModel):
     role: str
     timezone: str
     created_at: datetime
+
+
+class MeResponse(BaseModel):
+    """Profile returned by ``GET /api/v1/auth/me`` (SPEC FR-F019-006)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: str
+    role: str
+    timezone: str

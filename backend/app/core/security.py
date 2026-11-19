@@ -12,8 +12,10 @@ from typing import Any
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 
 from app.core.config import get_settings
+from app.core.errors import AppError
 
 _hasher = PasswordHasher()
 
@@ -44,6 +46,32 @@ def create_access_token(data: dict[str, Any]) -> str:
         payload, settings.jwt_secret, algorithm=settings.jwt_algorithm
     )
     return token
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    """Verify an access token's signature and expiry, returning its claims."""
+    settings = get_settings()
+
+    try:
+        claims: dict[str, Any] = jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+        )
+    except ExpiredSignatureError as exc:
+        raise AppError(
+            "Access token has expired",
+            code="TOKEN_EXPIRED",
+            status_code=401,
+        ) from exc
+    except JWTError as exc:
+        raise AppError(
+            "Access token is invalid",
+            code="INVALID_TOKEN",
+            status_code=401,
+        ) from exc
+
+    return claims
 
 
 def generate_refresh_token() -> str:
