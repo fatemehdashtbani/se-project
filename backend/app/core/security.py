@@ -1,11 +1,19 @@
-"""Password hashing built directly on argon2-cffi.
+"""Password hashing, JWT access tokens, and refresh-token helpers.
 
 passlib is intentionally not used: passlib 1.7.4 inspects ``argon2.__about__``,
 which newer argon2-cffi releases removed, so it warns or fails on first use.
 """
 
+import hashlib
+import secrets
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+from jose import jwt
+
+from app.core.config import get_settings
 
 _hasher = PasswordHasher()
 
@@ -15,9 +23,34 @@ def hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def verify_password(password_hash: str, password: str) -> bool:
-    """Return True when the password matches the stored Argon2id hash."""
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Return True when the plaintext password matches the stored Argon2id hash."""
     try:
-        return _hasher.verify(password_hash, password)
+        return _hasher.verify(hashed_password, plain_password)
     except (VerifyMismatchError, VerificationError, InvalidHashError):
         return False
+
+
+def create_access_token(data: dict[str, Any]) -> str:
+    """Encode a short-lived HS256 access token, adding issue and expiry claims."""
+    settings = get_settings()
+    issued_at = datetime.now(UTC)
+    payload: dict[str, Any] = {
+        **data,
+        "iat": issued_at,
+        "exp": issued_at + timedelta(minutes=settings.access_token_ttl_minutes),
+    }
+    token: str = jwt.encode(
+        payload, settings.jwt_secret, algorithm=settings.jwt_algorithm
+    )
+    return token
+
+
+def generate_refresh_token() -> str:
+    """Return a high-entropy opaque refresh token."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_refresh_token(token: str) -> str:
+    """Hash a refresh token for storage; the raw value never touches the database."""
+    return hashlib.sha256(token.encode()).hexdigest()
