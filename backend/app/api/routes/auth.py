@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.config import get_settings
+from app.core.errors import AppError
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
 from app.schemas.auth import LoginRequest, MeResponse, RegisterRequest, UserResponse
@@ -17,6 +18,7 @@ from app.services.identity import (
     issue_tokens,
     register_user,
     revoke_refresh_token,
+    rotate_refresh_token,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -41,6 +43,24 @@ def _session_cookie(
     )
 
 
+def _token_response(
+    message: str, access_token: str, refresh_token: str
+) -> JSONResponse:
+    """Return ``message`` with both session cookies attached."""
+    settings = get_settings()
+    response = JSONResponse({"message": message})
+    _session_cookie(
+        response, "access_token", access_token, settings.access_token_ttl_minutes * 60
+    )
+    _session_cookie(
+        response,
+        "refresh_token",
+        refresh_token,
+        settings.refresh_token_ttl_days * 24 * 60 * 60,
+    )
+    return response
+
+
 @router.post(
     "/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse
 )
@@ -60,19 +80,22 @@ async def login(payload: LoginRequest, session: SessionDep) -> JSONResponse:
         raise InvalidCredentialsError
 
     access_token, refresh_token = await issue_tokens(session, user)
-    settings = get_settings()
+    return _token_response("Logged in successfully", access_token, refresh_token)
 
-    response = JSONResponse({"message": "Logged in successfully"})
-    _session_cookie(
-        response, "access_token", access_token, settings.access_token_ttl_minutes * 60
+
+@router.post("/refresh")
+async def refresh(request: Request, session: SessionDep) -> JSONResponse:
+    """Rotate the session: new access token and a new refresh token in the family."""
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise AppError(
+            "Refresh token is required", code="UNAUTHORIZED", status_code=401
+        )
+
+    access_token, new_refresh_token = await rotate_refresh_token(session, refresh_token)
+    return _token_response(
+        "Tokens refreshed successfully", access_token, new_refresh_token
     )
-    _session_cookie(
-        response,
-        "refresh_token",
-        refresh_token,
-        settings.refresh_token_ttl_days * 24 * 60 * 60,
-    )
-    return response
 
 
 @router.get("/me", response_model=MeResponse)
