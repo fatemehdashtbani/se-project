@@ -176,15 +176,15 @@ async def rotate_refresh_token(
 
 
 async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
-    """Revoke the refresh token matching the presented value, if it is still active."""
-    revoked = await session.scalar(
-        select(RefreshToken).where(
-            RefreshToken.token_hash == hash_refresh_token(token),
-            RefreshToken.revoked_at.is_(None),
-        )
+    """Revoke every active token in the login family that ``token`` belongs to.
+
+    Logout therefore ends that session across all its rotated tokens, while other
+    devices (separate families) stay signed in.
+    """
+    row = await session.scalar(
+        select(RefreshToken).where(RefreshToken.token_hash == hash_refresh_token(token))
     )
-    if revoked is None:
+    if row is None:
         return
 
-    revoked.revoked_at = datetime.now(UTC)
-    await session.commit()
+    await _revoke_family(session, row.family_id, datetime.now(UTC))

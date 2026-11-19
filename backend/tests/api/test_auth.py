@@ -19,6 +19,7 @@ REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"
 REFRESH_URL = "/api/v1/auth/refresh"
 ME_URL = "/api/v1/auth/me"
+TIMEZONE_URL = "/api/v1/auth/me/timezone"
 LOGOUT_URL = "/api/v1/auth/logout"
 
 PASSWORD = "secret123"
@@ -362,3 +363,81 @@ async def test_refresh_rejects_missing_and_garbage_tokens(client: AsyncClient) -
     )
 
     assert garbage.status_code == 401
+
+
+async def test_logout_with_an_older_rotated_token_revokes_the_active_one(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """Logout is family-scoped: presenting any member ends the whole login chain.
+
+    A single active token can only be observed this way, because rotation always
+    revokes the previous row; presenting the older row proves the family (not just
+    the presented row) is what gets revoked.
+    """
+    email = "logout.family@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    login = await _login(client, email)
+    assert login.status_code == 200
+    token_one = login.cookies["refresh_token"]
+
+    rotation = await client.post(REFRESH_URL)
+    assert rotation.status_code == 200
+    token_two = _cookie_payload(_set_cookie_headers(rotation)["refresh_token"])
+    assert token_two != token_one
+
+    client.cookies.clear()
+    logout = await client.post(
+        LOGOUT_URL,
+        headers={"Cookie": f"refresh_token={token_one}"},
+    )
+    assert logout.status_code == 200
+
+    rows = await _refresh_rows(db_session_factory, email)
+    assert _hash_token(token_one) in rows
+    assert _hash_token(token_two) in rows
+    assert rows[_hash_token(token_two)].revoked_at is not None
+
+
+async def test_update_timezone_persists_and_me_reflects_it(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "timezone.update@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    assert (await _login(client, email)).status_code == 200
+
+    response = await client.put(TIMEZONE_URL, json={"timezone": "Asia/Tehran"})
+
+    assert response.status_code == 200
+    assert response.json()["timezone"] == "Asia/Tehran"
+
+    async with db_session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one()
+    assert user.timezone == "Asia/Tehran"
+
+    me = await client.get(ME_URL)
+    assert me.status_code == 200
+    assert me.json()["timezone"] == "Asia/Tehran"
+
+
+async def test_update_timezone_rejects_unknown_iana_zone(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "timezone.invalid@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    assert (await _login(client, email)).status_code == 200
+
+    response = await client.put(TIMEZONE_URL, json={"timezone": "Mars/Phobos"})
+
+    assert response.status_code in {400, 422}
+    assert response.json()["error"]["code"] in {"VALIDATION_ERROR", "INVALID_TIMEZONE"}
+
+    async with db_session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one()
+    assert user.timezone == "UTC"
