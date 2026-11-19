@@ -1,0 +1,49 @@
+# Feature Specification — F-019 Identity Backend
+
+- Status: Approved
+- Owner: Project team
+- Related backlog item: F-019
+- Related ADRs: ADR-0002 (DB), ADR-0005 (JWT Hybrid), ADR-0006 (RBAC)
+
+## 1. Problem and objective
+The frontend login UI (F-002) is currently mocked. We need real authentication endpoints, a database to store users, password hashing, and JWT session management to secure the application.
+
+## 2. Actors and permissions
+- Public visitors can access `/api/v1/auth/register` and `/api/v1/auth/login`.
+- Authenticated users can access `/api/v1/auth/me` and `/api/v1/auth/logout`.
+
+## 3. Scope
+### In scope
+- PostgreSQL (prod) / SQLite (dev) setup via SQLAlchemy and Alembic.
+- `User` table: id, email, password_hash, role (default 'user'), timezone, created_at.
+- Registration endpoint: validates email format, hashes password with Argon2id.
+- Login endpoint: verifies credentials, issues JWT access token (15 min) and refresh token (14 days). Web clients receive them as HttpOnly cookies.
+- Refresh endpoint: validates refresh token, rotates it, issues new access token.
+- Logout endpoint: clears cookies and revokes refresh token.
+- `GET /me` endpoint: returns current user profile.
+
+### Out of scope
+- Email verification sending (deferred to F-021).
+- Password reset flow (deferred to F-022).
+- Frontend integration (will be done in F-023).
+- Android Bearer token flow (deferred to Phase 6).
+
+## 4. Functional requirements
+- FR-F019-001: Register with unique email and password (min 8 chars). Password stored with Argon2id.
+- FR-F019-002: Login returns HttpOnly cookies (`access_token`, `refresh_token`).
+- FR-F019-003: The access token expires in 15 mins; refresh token in 14 days.
+- FR-F019-004: Refresh endpoint rotates the refresh token (prevents replay attacks).
+- FR-F019-005: Logout invalidates the refresh token in the DB and clears cookies.
+
+## 5. Business rules and invariants
+- Passwords must never be logged or returned in responses.
+- Email must be lowercase and unique.
+
+## 6. Acceptance criteria
+- Given valid registration data, a user is created in the DB.
+- Given invalid credentials, login returns 401.
+- Given a valid refresh cookie, a new access cookie is issued.
+
+## 7. Test strategy
+- Integration tests using `pytest`, `httpx.AsyncClient`, and a test SQLite database.
+- Test all endpoints, invalid inputs, and token expiry logic.
