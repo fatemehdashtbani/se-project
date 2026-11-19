@@ -17,6 +17,7 @@ from app.infrastructure.db.models import RefreshToken, User
 
 REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"
+REFRESH_URL = "/api/v1/auth/refresh"
 ME_URL = "/api/v1/auth/me"
 LOGOUT_URL = "/api/v1/auth/logout"
 
@@ -47,6 +48,32 @@ def _cookie_payload(header: str) -> str:
     pair = header.split(";", 1)[0]
     _, _, value = pair.partition("=")
     return value.strip().strip('"')
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+async def _refresh_rows(
+    db_session_factory: async_sessionmaker[AsyncSession],
+    email: str,
+) -> dict[str, RefreshToken]:
+    """Return this user's refresh-token rows keyed by token hash."""
+    async with db_session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one()
+        rows = (
+            (
+                await session.execute(
+                    select(RefreshToken).where(RefreshToken.user_id == user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    return {row.token_hash: row for row in rows}
 
 
 async def test_register_creates_user_with_hashed_password(
@@ -258,3 +285,80 @@ async def test_logout_clears_cookies_and_revokes_refresh_token(
 
     assert len(tokens) == 1
     assert tokens[0].revoked_at is not None
+
+
+async def test_refresh_rotates_tokens_and_revokes_the_previous_row(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "refresh.valid@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    login = await _login(client, email)
+    assert login.status_code == 200
+
+    old_refresh = login.cookies["refresh_token"]
+    old_hash = _hash_token(old_refresh)
+
+    response = await client.post(REFRESH_URL)
+
+    assert response.status_code == 200
+
+    cookie_headers = _set_cookie_headers(response)
+    assert "access_token" in cookie_headers
+    assert "refresh_token" in cookie_headers
+
+    new_refresh = _cookie_payload(cookie_headers["refresh_token"])
+    new_hash = _hash_token(new_refresh)
+    assert new_refresh != old_refresh
+
+    rows = await _refresh_rows(db_session_factory, email)
+
+    assert old_hash in rows
+    assert new_hash in rows
+    assert len(rows) == 2
+    assert rows[old_hash].revoked_at is not None
+    assert rows[new_hash].revoked_at is None
+
+
+async def test_refresh_replay_revokes_the_whole_token_family(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "refresh.replay@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    login = await _login(client, email)
+    assert login.status_code == 200
+
+    token_one = login.cookies["refresh_token"]
+
+    rotation = await client.post(REFRESH_URL)
+    assert rotation.status_code == 200
+    token_two = _cookie_payload(_set_cookie_headers(rotation)["refresh_token"])
+    assert token_two != token_one
+
+    # Replay the already-rotated token the way an attacker holding it would.
+    client.cookies.clear()
+    replay = await client.post(
+        REFRESH_URL,
+        headers={"Cookie": f"refresh_token={token_one}"},
+    )
+
+    assert replay.status_code == 401
+    assert replay.json()["error"]["code"] == "INVALID_REFRESH_TOKEN"
+
+    rows = await _refresh_rows(db_session_factory, email)
+    assert _hash_token(token_two) in rows
+    assert all(row.revoked_at is not None for row in rows.values())
+
+
+async def test_refresh_rejects_missing_and_garbage_tokens(client: AsyncClient) -> None:
+    without_cookie = await client.post(REFRESH_URL)
+    assert without_cookie.status_code == 401
+
+    client.cookies.clear()
+    garbage = await client.post(
+        REFRESH_URL,
+        headers={"Cookie": "refresh_token=garbage-token"},
+    )
+
+    assert garbage.status_code == 401
