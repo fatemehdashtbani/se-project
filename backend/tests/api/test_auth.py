@@ -1,15 +1,36 @@
-"""Integration tests for the registration endpoint.
+"""Integration tests for the registration and login endpoints.
 
-These tests describe the contract from F-019 FR-F019-001 and SPEC section 3.
+These tests describe the contract from F-019 FR-F019-001, FR-F019-002 and SPEC section 3.
 """
 
-from httpx import AsyncClient
+import hashlib
+from datetime import UTC, datetime
+
+from httpx import AsyncClient, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.infrastructure.db.models import User
+from app.infrastructure.db.models import RefreshToken, User
 
 REGISTER_URL = "/api/v1/auth/register"
+LOGIN_URL = "/api/v1/auth/login"
+
+PASSWORD = "secret123"
+
+
+async def _register_user(
+    client: AsyncClient, email: str, password: str = PASSWORD
+) -> Response:
+    return await client.post(REGISTER_URL, json={"email": email, "password": password})
+
+
+def _set_cookie_headers(response: Response) -> dict[str, str]:
+    """Map cookie name to its raw ``Set-Cookie`` header."""
+    headers: dict[str, str] = {}
+    for raw in response.headers.get_list("set-cookie"):
+        name = raw.split("=", 1)[0].strip()
+        headers[name] = raw
+    return headers
 
 
 async def test_register_creates_user_with_hashed_password(
@@ -70,3 +91,73 @@ async def test_register_rejects_invalid_email(client: AsyncClient) -> None:
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_login_returns_http_only_cookies_and_records_refresh_token(
+    client: AsyncClient,
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    email = "login.user@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+
+    response = await client.post(LOGIN_URL, json={"email": email, "password": PASSWORD})
+
+    assert response.status_code == 200
+
+    cookie_headers = _set_cookie_headers(response)
+    assert "access_token" in cookie_headers
+    assert "refresh_token" in cookie_headers
+    assert "httponly" in cookie_headers["access_token"].lower()
+    assert "httponly" in cookie_headers["refresh_token"].lower()
+
+    async with db_session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one()
+        tokens = (
+            (
+                await session.execute(
+                    select(RefreshToken).where(RefreshToken.user_id == user.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert len(tokens) == 1
+    refresh_row = tokens[0]
+    assert refresh_row.revoked_at is None
+
+    expires_at = refresh_row.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    assert expires_at > datetime.now(UTC)
+
+    refresh_cookie = response.cookies["refresh_token"]
+    assert refresh_row.token_hash == hashlib.sha256(refresh_cookie.encode()).hexdigest()
+    assert len(refresh_row.token_hash) == 64
+
+
+async def test_login_rejects_wrong_password(client: AsyncClient) -> None:
+    email = "wrong.password@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL,
+        json={"email": email, "password": "different-secret"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+async def test_login_rejects_unknown_email_without_disclosing_it(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        LOGIN_URL,
+        json={"email": "nobody@example.com", "password": PASSWORD},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
