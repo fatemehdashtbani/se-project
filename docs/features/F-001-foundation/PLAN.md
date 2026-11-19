@@ -45,8 +45,8 @@ Backend has a single `/healthz`. No metrics yet.
 N/A (initial scaffold).
 
 ## 9. Completion checklist
-- [ ] `npm run dev` serves the frontend.
-- [ ] `uvicorn` serves `/healthz`.
-- [ ] `npm run lint && npm run type-check && npm run test:unit` pass.
-- [ ] `ruff check && black --check && mypy && pytest` pass.
-- [ ] `.env.example` exists.
+- [x] `npm run dev` serves the frontend.
+- [x] `uvicorn` serves `/healthz`.
+- [x] `npm run lint && npm run type-check && npm run test:unit` pass.
+- [x] `ruff check && black --check && mypy && pytest` pass.
+- [x] `.env.example` exists.

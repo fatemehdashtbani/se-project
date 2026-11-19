@@ -40,8 +40,8 @@ For every new feature:
 
 | ID | Feature / Workstream | Priority | Status | Dependencies | Specification | Plan |
 |---|---|---:|---|---|---|---|
-| F-001 | Repository foundation, tooling, configuration, CI | P0 | Proposed | — | `docs/features/F-001-foundation/SPEC.md` | `docs/features/F-001-foundation/PLAN.md` |
-| F-002 | Identity, registration, login, sessions, password reset, email verification | P0 | Proposed | F-001 | `docs/features/F-002-identity/SPEC.md` | `docs/features/F-002-identity/PLAN.md` |
+| F-001 | Repository foundation, tooling, configuration, CI | P0 | Done | — | `docs/features/F-001-foundation/SPEC.md` | `docs/features/F-001-foundation/PLAN.md` |
+| F-002 | Identity, registration, login, sessions, password reset, email verification | P0 | Ready | F-001 | `docs/features/F-002-identity/SPEC.md` | `docs/features/F-002-identity/PLAN.md` |
 | F-003 | Role-based access control — User / Mentor / Admin | P0 | Proposed | F-002 | `docs/features/F-003-rbac/SPEC.md` | `docs/features/F-003-rbac/PLAN.md` |
 | F-004 | User profile, onboarding, time-zone preference | P0 | Proposed | F-002 | `docs/features/F-004-profile/SPEC.md` | `docs/features/F-004-profile/PLAN.md` |
 | F-005 | Routine CRUD — create, edit, archive, delete | P0 | Proposed | F-003, F-004 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
@@ -57,6 +57,7 @@ For every new feature:
 | F-015 | Android app — notifications, check-ins, routine viewing | P1 | Proposed | F-007, F-009 | `docs/features/F-015-android/SPEC.md` | `docs/features/F-015-android/PLAN.md` |
 | F-016 | Team / group routines | P2 | Proposed | F-007 | `docs/features/F-016-team-routines/SPEC.md` | `docs/features/F-016-team-routines/PLAN.md` |
 | F-017 | Production hardening — backup/restore, observability, security review | P0 | Proposed | F-001–F-014 | `docs/features/F-017-production-readiness/SPEC.md` | `docs/features/F-017-production-readiness/PLAN.md` |
+| F-018 | Upgrade frontend dependencies (ESLint 9, Vitest 2) to resolve audit warnings | P2 | Proposed | — | — | — |
 
 ## Current sprint
 
@@ -66,4 +67,5 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 
 | Date | Change |
 |---|---|
+| 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |
