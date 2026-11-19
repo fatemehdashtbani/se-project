@@ -37,6 +37,7 @@ The frontend login UI (F-002) is currently mocked. We need real authentication e
 - FR-F019-004: Refresh endpoint rotates the refresh token (prevents replay attacks).
 - FR-F019-005: Logout invalidates the refresh token in the DB and clears cookies.
 - FR-F019-006: The system must provide `GET /api/v1/auth/me` which returns the current user's profile (id, email, role, timezone). It authenticates strictly via the access token cookie.
+- FR-F019-007: The system must provide `PUT /api/v1/auth/me/timezone` to update the user's IANA timezone. It must validate the timezone against the standard IANA database.
 
 ## 5. Business rules and invariants
 - Passwords must never be logged or returned in responses.

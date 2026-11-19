@@ -11,7 +11,13 @@ from app.core.config import get_settings
 from app.core.errors import AppError
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
-from app.schemas.auth import LoginRequest, MeResponse, RegisterRequest, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    MeResponse,
+    RegisterRequest,
+    TimezoneUpdateRequest,
+    UserResponse,
+)
 from app.services.identity import (
     InvalidCredentialsError,
     authenticate_user,
@@ -19,6 +25,7 @@ from app.services.identity import (
     register_user,
     revoke_refresh_token,
     rotate_refresh_token,
+    update_timezone,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -102,6 +109,17 @@ async def refresh(request: Request, session: SessionDep) -> JSONResponse:
 async def me(current_user: CurrentUserDep) -> MeResponse:
     """Return the authenticated user's own profile."""
     return MeResponse.model_validate(current_user)
+
+
+@router.put("/me/timezone")
+async def update_my_timezone(
+    payload: TimezoneUpdateRequest,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+) -> dict[str, str]:
+    """Update the signed-in user's IANA timezone (SPEC FR-F019-007)."""
+    await update_timezone(session, current_user, payload.timezone)
+    return {"message": "Timezone updated successfully", "timezone": payload.timezone}
 
 
 @router.post("/logout")

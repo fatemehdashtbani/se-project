@@ -3,6 +3,7 @@
 import re
 import uuid
 from datetime import datetime
+from zoneinfo import available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -71,3 +72,18 @@ class MeResponse(BaseModel):
     email: str
     role: str
     timezone: str
+
+
+class TimezoneUpdateRequest(BaseModel):
+    """Payload accepted by ``PUT /api/v1/auth/me/timezone`` (SPEC FR-F019-007)."""
+
+    timezone: str = Field(min_length=1, max_length=64)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_iana_zone(cls, value: str) -> str:
+        """Accept only keys present in the standard IANA timezone database."""
+        zone = value.strip()
+        if zone not in available_timezones():
+            raise ValueError("Invalid IANA timezone")
+        return zone

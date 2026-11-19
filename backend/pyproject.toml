@@ -12,6 +12,7 @@ dependencies = [
   "pydantic-settings>=2.1",
   "python-jose[cryptography]>=3.3",
   "argon2-cffi>=23.1",
+  "tzdata>=2023.3",
 ]
 
 [tool.pytest.ini_options]

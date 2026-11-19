@@ -188,3 +188,13 @@ async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
         return
 
     await _revoke_family(session, row.family_id, datetime.now(UTC))
+
+
+async def update_timezone(session: AsyncSession, user: User, timezone: str) -> None:
+    """Persist an already-validated IANA timezone for the user.
+
+    Existing check-ins keep the local dates and timezones recorded at the time
+    (AGENTS.md section 7); only later interpretations use the new value.
+    """
+    user.timezone = timezone
+    await session.commit()
