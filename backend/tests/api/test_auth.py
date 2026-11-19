@@ -59,6 +59,7 @@ async def test_register_rejects_short_password(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
 async def test_register_rejects_invalid_email(client: AsyncClient) -> None:
@@ -68,3 +69,4 @@ async def test_register_rejects_invalid_email(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
