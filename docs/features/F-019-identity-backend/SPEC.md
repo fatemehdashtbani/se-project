@@ -1,6 +1,6 @@
 # Feature Specification — F-019 Identity Backend — Registration, JWT sessions (Hybrid), Argon2
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-019
 - Related ADRs: ADR-0002 (DB), ADR-0005 (JWT Hybrid), ADR-0006 (RBAC)
@@ -38,6 +38,7 @@ The frontend login UI (F-002) is currently mocked. We need real authentication e
 - FR-F019-005: Logout invalidates the refresh token in the DB and clears cookies.
 - FR-F019-006: The system must provide `GET /api/v1/auth/me` which returns the current user's profile (id, email, role, timezone). It authenticates strictly via the access token cookie.
 - FR-F019-007: The system must provide `PUT /api/v1/auth/me/timezone` to update the user's IANA timezone. It must validate the timezone against the standard IANA database.
+- FR-F019-008: Family-scoped logout: Logout revokes the entire token family.
 
 ## 5. Business rules and invariants
 - Passwords must never be logged or returned in responses.
@@ -52,7 +53,7 @@ The frontend login UI (F-002) is currently mocked. We need real authentication e
 Errors return a consistent JSON envelope: `{"error": {"code": "STABLE_CODE", "message": "Human readable"}}` as mandated by AGENTS.md §6.
 
 ## 8. Data impact
-Adds two tables: `users` (one row per account) and `refresh_tokens` (one row per issued refresh token, retained for revocation and audit). No existing data is migrated in this feature.
+Adds two tables: `users` (one row per account) and `refresh_tokens` (one row per issued refresh token, retained for revocation and audit). Each refresh-token row carries a `family_id` identifying the login chain it belongs to, so rotation and replay detection are scoped per session and logout revokes only its own family. No existing data is migrated in this feature.
 
 ## 9. Security and privacy
 All auth mutations (`register`, `login`, `refresh`, `logout`) will use `HttpOnly`, `Secure` (in prod), and `SameSite=Lax` cookies. CSRF protection is enforced by checking the `Origin`/`Referer` headers against the allowed frontend domain, or via double-submit cookie pattern.

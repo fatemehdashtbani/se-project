@@ -26,7 +26,7 @@
 - Test security: Ensure passwords are hashed in the DB and cookies are HttpOnly.
 
 ## 4. Completion checklist
-- [ ] DB migrations work.
-- [ ] Tests pass on SQLite.
-- [ ] Linters and type-checkers pass.
-- [ ] API docs (OpenAPI) generated correctly.
+- [x] DB migrations work.
+- [x] Tests pass on SQLite.
+- [x] Linters and type-checkers pass.
+- [x] API docs (OpenAPI) generated correctly.
