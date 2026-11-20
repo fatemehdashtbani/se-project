@@ -27,6 +27,10 @@ export const useAuthStore = defineStore('auth', {
 
         // Login only returns a message; the session cookie is the real state.
         this.user = await apiRequest<User>('/api/v1/auth/me', { method: 'GET' });
+      } catch (error) {
+        // A rejected login must not leave a stale identity behind.
+        this.user = null;
+        throw error;
       } finally {
         this.isLoading = false;
       }

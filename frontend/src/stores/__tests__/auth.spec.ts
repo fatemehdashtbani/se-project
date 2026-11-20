@@ -69,6 +69,23 @@ describe('useAuthStore (F-023)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('login() clears a stale user when authentication fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, {
+        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+      }),
+    );
+
+    const store = useAuthStore();
+    store.$patch({ user: USER });
+
+    await expect(store.login(USER.email, 'wrong-password')).rejects.toMatchObject({
+      code: 'INVALID_CREDENTIALS',
+    });
+
+    expect(store.user).toBeNull();
+  });
+
   it('logout() revokes the session and clears the user', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { message: 'Logged out successfully' }));
 

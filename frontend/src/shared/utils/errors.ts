@@ -1,0 +1,12 @@
+/** Persian, user-facing messages for stable backend error codes. */
+
+const MESSAGES: Record<string, string> = {
+  INVALID_CREDENTIALS: 'ایمیل یا رمز عبور نادرست است',
+  VALIDATION_ERROR: 'اطلاعات وارد شده معتبر نیست',
+};
+
+const FALLBACK = 'خطایی رخ داد. لطفاً دوباره تلاش کنید';
+
+export function getPersianError(code: string): string {
+  return MESSAGES[code] ?? FALLBACK;
+}

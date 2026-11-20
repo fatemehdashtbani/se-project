@@ -1,6 +1,30 @@
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
 import LoginPage from '../LoginPage.vue';
+import { ApiError } from '@/shared/api/client';
+
+const { authStore, loginMock } = vi.hoisted(() => {
+  const loginMock = vi.fn();
+  return {
+    loginMock,
+    authStore: {
+      user: null as {
+        id: string;
+        email: string;
+        role: string;
+        timezone: string;
+      } | null,
+      isLoading: false,
+      login: loginMock,
+      logout: vi.fn(),
+      init: vi.fn(),
+    },
+  };
+});
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => authStore,
+}));
 
 const VALID_EMAIL = 'user@example.com';
 const VALID_PASSWORD = 'secret123';
@@ -16,6 +40,12 @@ async function submit(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('LoginPage (F-002)', () => {
+  beforeEach(() => {
+    loginMock.mockReset();
+    authStore.user = null;
+    authStore.isLoading = false;
+  });
+
   it('renders the email and password inputs', () => {
     const wrapper = mount(LoginPage);
 
@@ -91,5 +121,39 @@ describe('LoginPage (F-002)', () => {
     expect(wrapper.emitted('submit')).toEqual([
       [{ email: VALID_EMAIL, password: VALID_PASSWORD }],
     ]);
+  });
+
+  it('submits the credentials through the auth store', async () => {
+    const wrapper = mount(LoginPage);
+
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD);
+  });
+
+  it('shows the Persian message when the credentials are rejected', async () => {
+    loginMock.mockRejectedValueOnce(
+      new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password'),
+    );
+
+    const wrapper = mount(LoginPage);
+
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    const alerts = wrapper.findAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].text()).toBe('ایمیل یا رمز عبور نادرست است');
+  });
+
+  it('disables the submit button while a login is in flight', () => {
+    authStore.isLoading = true;
+
+    const wrapper = mount(LoginPage);
+
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined();
   });
 });
