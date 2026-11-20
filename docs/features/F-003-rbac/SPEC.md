@@ -21,12 +21,12 @@ Currently, any authenticated user has the same access. We need to enforce the th
 - Custom sub-roles for admins (deferred via future ADR).
 
 ## 3. Functional requirements
-- FR-F003-001: The backend must expose a dependency that returns a 403 Forbidden if the user lacks the required role.
-- FR-F003-002: A script (`scripts/create_admin.py`) must exist to manually seed an admin user in the database.
+- FR-F003-001: The backend must expose a dependency that returns a 403 Forbidden if the user lacks the required role. The response uses the stable error code `FORBIDDEN` with the message `Insufficient permissions`.
+- FR-F003-002: A script (`scripts/create_admin.py`) must exist that promotes an **existing** user to `admin` by email. It is idempotent, exits non-zero if the user does not exist, and exits non-zero if the user is already an admin. It must never create users and must never print credentials.
 - FR-F003-003: Accessing a `user` endpoint with an `admin` token must succeed if the endpoint doesn't strictly forbid admins (though most will just use `get_current_user`).
 
 ## 4. Test strategy
-- Add a test endpoint `GET /api/v1/admin/test` that requires the `admin` role.
-- Test with a normal user -> expects 403.
+- The protected route `GET /api/v1/admin/test` is defined **only in the test suite**, using a temporary `APIRouter` mounted on the test app. No test-only endpoint ships in production.
+- Test with a normal user -> expects 403 with code `FORBIDDEN`.
 - Test with an admin user -> expects 200.
 - Test with an unauthenticated request -> expects 401.
