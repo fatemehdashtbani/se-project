@@ -6,6 +6,14 @@
         <p class="mt-2 text-sm text-gray-500">برای ادامه، اطلاعات حساب خود را وارد کنید.</p>
       </header>
 
+      <p
+        v-if="serverError"
+        role="alert"
+        class="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+      >
+        {{ serverError }}
+      </p>
+
       <form class="space-y-5" novalidate @submit.prevent="handleSubmit">
         <div>
           <label for="email" class="mb-1 block text-sm font-medium text-gray-700">ایمیل</label>
@@ -52,7 +60,8 @@
 
         <button
           type="submit"
-          class="w-full rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          :disabled="authStore.isLoading"
+          class="w-full rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           ورود
         </button>
@@ -68,13 +77,21 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ApiError } from '@/shared/api/client';
+import { getPersianError } from '@/shared/utils/errors';
+import { useAuthStore } from '@/stores/auth';
 
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const authStore = useAuthStore();
+const router = useRouter();
+
 const email = ref('');
 const password = ref('');
 const errors = reactive({ email: '', password: '' });
+const serverError = ref('');
 
 const emit = defineEmits<{ submit: [payload: { email: string; password: string }] }>();
 
@@ -95,11 +112,21 @@ function validate(): boolean {
   return errors.email === '' && errors.password === '';
 }
 
-function handleSubmit(): void {
+async function handleSubmit(): Promise<void> {
   if (!validate()) {
     return;
   }
 
+  serverError.value = '';
   emit('submit', { email: email.value, password: password.value });
+
+  try {
+    await authStore.login(email.value, password.value);
+    await router.push('/dashboard');
+  } catch (error) {
+    serverError.value = getPersianError(
+      error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',
+    );
+  }
 }
 </script>
