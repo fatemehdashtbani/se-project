@@ -16,7 +16,7 @@
 4. Implement the router guard using the Pinia store.
 
 ## 3. Completion checklist
-- [ ] Pinia store tested.
-- [ ] Login actually hits the backend.
-- [ ] Router guards work.
-- [ ] Linters pass.
+- [x] Pinia store tested.
+- [x] Login actually hits the backend.
+- [x] Router guards work.
+- [x] Linters pass.

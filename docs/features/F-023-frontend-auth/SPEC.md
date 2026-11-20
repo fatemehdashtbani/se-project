@@ -1,6 +1,6 @@
 # Feature Specification — F-023 Frontend Auth Integration
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-023
 - Related ADRs: ADR-0005 (JWT Hybrid), ADR-0008 (FarsiUI)

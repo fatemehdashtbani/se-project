@@ -101,6 +101,17 @@ describe('useAuthStore (F-023)', () => {
     );
   });
 
+  it('logout() clears the user even when the API call fails', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+
+    const store = useAuthStore();
+    store.$patch({ user: USER });
+
+    await expect(store.logout()).rejects.toThrow('network down');
+
+    expect(store.user).toBeNull();
+  });
+
   it('init() hydrates the user from /me', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, USER));
 

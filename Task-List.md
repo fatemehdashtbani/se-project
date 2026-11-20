@@ -59,7 +59,7 @@ For every new feature:
 | F-017 | Production hardening — backup/restore, observability, security review | P0 | Proposed | F-001–F-014 | `docs/features/F-017-production-readiness/SPEC.md` | `docs/features/F-017-production-readiness/PLAN.md` |
 | F-018 | Upgrade frontend dependencies (ESLint 9, Vitest 2) to resolve audit warnings | P2 | Proposed | — | — | — |
 | F-019 | Identity Backend — Registration, JWT sessions (Hybrid), Argon2 | P0 | Done | F-001 | `docs/features/F-019-identity-backend/SPEC.md` | `docs/features/F-019-identity-backend/PLAN.md` |
-| F-023 | Frontend Auth Integration — Pinia store, API client, login wiring, route guard | P0 | Approved | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
+| F-023 | Frontend Auth Integration — Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
 
 ## Current sprint
 
@@ -72,5 +72,6 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 | 2026-11-19 | Backlog corrected: F-002 retitled to "Login UI (mock auth) — Frontend only"; F-019 (Identity Backend) added as P0/Ready; F-003 and F-004 dependencies moved from F-002 to F-019. |
 | 2026-11-19 | F-002 login UI implemented (TDD, 8 component tests) and marked Done; email-format validation added. Visual layout verification deferred to Playwright E2E in F-017. |
 | 2026-11-19 | F-019 closed as Done (all 8 FRs implemented, 18 backend tests green); title corrected to drop the deferred Password Reset scope. F-023 (Frontend Auth Integration) added as P0/Approved with SPEC and PLAN. |
+| 2026-11-20 | F-023 closed as Done: Pinia auth store, `fetch` client with error-envelope mapping, login/logout wiring, router guard, boot-time session hydration, and Persian error messages (25 frontend tests green, live smoke test through the Vite proxy). |
 | 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |

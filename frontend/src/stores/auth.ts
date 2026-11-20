@@ -38,11 +38,14 @@ export const useAuthStore = defineStore('auth', {
 
     /** Revoke the session server-side, then forget the user locally. */
     async logout(): Promise<void> {
-      await apiRequest<{ message: string }>('/api/v1/auth/logout', {
-        method: 'POST',
-      });
-
-      this.user = null;
+      try {
+        await apiRequest<{ message: string }>('/api/v1/auth/logout', {
+          method: 'POST',
+        });
+      } finally {
+        // The local session ends even if the server is unreachable.
+        this.user = null;
+      }
     },
 
     /** Hydrate the store from the HttpOnly session cookie on app boot. */
