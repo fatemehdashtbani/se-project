@@ -42,7 +42,7 @@ For every new feature:
 |---|---|---:|---|---|---|---|
 | F-001 | Repository foundation, tooling, configuration, CI | P0 | Done | — | `docs/features/F-001-foundation/SPEC.md` | `docs/features/F-001-foundation/PLAN.md` |
 | F-002 | Login UI (mock auth) — Frontend only | P0 | Done | F-001 | `docs/features/F-002-identity/SPEC.md` | `docs/features/F-002-identity/PLAN.md` |
-| F-003 | Role-based access control - User / Mentor / Admin | P0 | Approved | F-019 | `docs/features/F-003-rbac/SPEC.md` | `docs/features/F-003-rbac/PLAN.md` |
+| F-003 | Role-based access control - User / Mentor / Admin | P0 | In Progress | F-019 | `docs/features/F-003-rbac/SPEC.md` | `docs/features/F-003-rbac/PLAN.md` |
 | F-004 | User profile, onboarding, time-zone preference | P0 | Proposed | F-019 | `docs/features/F-004-profile/SPEC.md` | `docs/features/F-004-profile/PLAN.md` |
 | F-005 | Routine CRUD — create, edit, archive, delete | P0 | Proposed | F-003, F-004 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
 | F-006 | Routine scheduling — recurring patterns (daily/weekly/monthly) | P0 | Proposed | F-005 | `docs/features/F-006-routine-scheduling/SPEC.md` | `docs/features/F-006-routine-scheduling/PLAN.md` |

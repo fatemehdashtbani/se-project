@@ -40,6 +40,14 @@ class InvalidCredentialsError(AppError):
     message = "Invalid email or password"
 
 
+class UserNotFoundError(AppError):
+    """Raised when an operation targets an email that has no account."""
+
+    status_code = 404
+    code = "USER_NOT_FOUND"
+    message = "User not found."
+
+
 class InvalidRefreshTokenError(AppError):
     """Raised when a refresh token is unknown, expired, or replayed."""
 
@@ -66,6 +74,24 @@ async def register_user(session: AsyncSession, *, email: str, password: str) -> 
 
     await session.refresh(user)
     return user
+
+
+async def promote_to_admin(session: AsyncSession, *, email: str) -> bool:
+    """Grant the admin role to an existing user, idempotently.
+
+    Returns True when the role changed. Admins are never created here: an
+    operator promotes an account that already exists (ADR-0006).
+    """
+    user = await session.scalar(select(User).where(User.email == email))
+    if user is None:
+        raise UserNotFoundError
+
+    if user.role == "admin":
+        return False
+
+    user.role = "admin"
+    await session.commit()
+    return True
 
 
 async def authenticate_user(

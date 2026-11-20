@@ -1,7 +1,8 @@
 """Shared FastAPI dependencies."""
 
 import uuid
-from typing import Annotated
+from collections.abc import Awaitable, Callable
+from typing import Annotated, Literal
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,8 @@ from app.core.errors import AppError
 from app.core.security import decode_access_token
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
+
+Role = Literal["user", "mentor", "admin"]
 
 
 async def get_current_user(
@@ -42,3 +45,27 @@ async def get_current_user(
         raise AppError("Authentication required", code="UNAUTHORIZED", status_code=401)
 
     return user
+
+
+def require_role(required_role: Role) -> Callable[..., Awaitable[User]]:
+    """Build a dependency that admits only users holding ``required_role``.
+
+    The role is read from the database by ``get_current_user``, never from the
+    token claims, so a role change takes effect on the very next request
+    (ADR-0006). The parameter is a ``Literal`` so a misspelled role fails at
+    import time instead of silently denying every caller.
+    """
+
+    async def role_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if current_user.role != required_role:
+            raise AppError(
+                "Insufficient permissions",
+                code="FORBIDDEN",
+                status_code=403,
+            )
+
+        return current_user
+
+    return role_checker
