@@ -19,7 +19,13 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 async function handleLogout(): Promise<void> {
-  await authStore.logout();
-  await router.push('/login');
+  try {
+    await authStore.logout();
+  } catch {
+    // The store has already dropped the local user in its own `finally`;
+    // a failed revoke must not trap the visitor inside the protected area.
+  } finally {
+    await router.push('/login');
+  }
 }
 </script>

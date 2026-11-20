@@ -51,4 +51,15 @@ describe('DashboardPage (F-023)', () => {
     expect(logoutMock).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenCalledWith('/login');
   });
+
+  it('redirects to /login even when the logout request fails', async () => {
+    logoutMock.mockRejectedValueOnce(new Error('network down'));
+
+    const wrapper = mount(DashboardPage);
+
+    await wrapper.get('button[type="button"]').trigger('click');
+    await flushPromises();
+
+    expect(pushMock).toHaveBeenCalledWith('/login');
+  });
 });

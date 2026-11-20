@@ -19,6 +19,7 @@ app.add_exception_handler(StarletteHTTPException, http_error_handler)  # type: i
 app.include_router(auth_router)
 
 
+@app.get("/api/v1/healthz", tags=["health"])
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
