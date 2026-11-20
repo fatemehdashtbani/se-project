@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 import { apiRequest } from '@/shared/api/client';
 
+export type UserRole = 'user' | 'mentor' | 'admin';
+
 export interface User {
   id: string;
   email: string;
-  role: string;
+  role: UserRole;
   timezone: string;
 }
 

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useAuthStore } from '../auth';
+import { useAuthStore, type User } from '../auth';
 
-const USER = {
+const USER: User = {
   id: '6f0f8f2e-8f6a-4d0e-9d3f-2b1c0a9e8d7c',
   email: 'user@example.com',
   role: 'user',

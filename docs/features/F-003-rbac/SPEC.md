@@ -1,6 +1,6 @@
 # Feature Specification — F-003 Role-Based Access Control
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-003
 - Related ADRs: ADR-0006 (RBAC Model), ADR-0005 (JWT)

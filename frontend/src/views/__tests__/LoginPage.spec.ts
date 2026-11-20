@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import LoginPage from '../LoginPage.vue';
 import { ApiError } from '@/shared/api/client';
+import type { UserRole } from '@/stores/auth';
 
 const { authStore, loginMock, pushMock } = vi.hoisted(() => {
   const loginMock = vi.fn();
@@ -12,7 +13,7 @@ const { authStore, loginMock, pushMock } = vi.hoisted(() => {
       user: null as {
         id: string;
         email: string;
-        role: string;
+        role: UserRole;
         timezone: string;
       } | null,
       isLoading: false,

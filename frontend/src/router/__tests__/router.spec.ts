@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import router from '../index';
+import type { UserRole } from '@/stores/auth';
 
 const { authStore } = vi.hoisted(() => ({
   authStore: {
     user: null as {
       id: string;
       email: string;
-      role: string;
+      role: UserRole;
       timezone: string;
     } | null,
     isLoading: false,

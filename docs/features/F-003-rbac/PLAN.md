@@ -17,6 +17,6 @@
 5. **REFACTOR:** Update `frontend/src/stores/auth.ts` `User` interface to use a union type for `role`.
 
 ## 3. Completion checklist
-- [ ] Tests cover 401, 403, and 200.
-- [ ] Seed script works manually.
-- [ ] Linters and type-checkers pass.
+- [x] Tests cover 401, 403, and 200.
+- [x] Seed script works manually.
+- [x] Linters and type-checkers pass.

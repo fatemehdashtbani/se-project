@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import DashboardPage from '../DashboardPage.vue';
+import type { UserRole } from '@/stores/auth';
 
 const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
   const logoutMock = vi.fn();
@@ -11,7 +12,7 @@ const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
       user: null as {
         id: string;
         email: string;
-        role: string;
+        role: UserRole;
         timezone: string;
       } | null,
       isLoading: false,
