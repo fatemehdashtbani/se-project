@@ -16,6 +16,6 @@
 5. **GREEN:** Add the route and a link from the Dashboard to the Profile page.
 
 ## 3. Completion checklist
-- [ ] Tests pass.
-- [ ] RTL and Persian text correct.
-- [ ] Route guarded.
+- [x] Tests pass.
+- [x] RTL and Persian text correct.
+- [x] Route guarded.

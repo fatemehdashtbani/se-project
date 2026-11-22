@@ -1,6 +1,6 @@
 # Feature Specification — F-004 Profile and Timezone UI
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-004
 - Related ADRs: ADR-0004 (Timezone), ADR-0008 (FarsiUI)
