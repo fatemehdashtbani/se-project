@@ -43,7 +43,7 @@ For every new feature:
 | F-001 | Repository foundation, tooling, configuration, CI | P0 | Done | — | `docs/features/F-001-foundation/SPEC.md` | `docs/features/F-001-foundation/PLAN.md` |
 | F-002 | Login UI (mock auth) — Frontend only | P0 | Done | F-001 | `docs/features/F-002-identity/SPEC.md` | `docs/features/F-002-identity/PLAN.md` |
 | F-003 | Role-based access control - User / Mentor / Admin | P0 | Done | F-019 | `docs/features/F-003-rbac/SPEC.md` | `docs/features/F-003-rbac/PLAN.md` |
-| F-004 | User profile, onboarding, time-zone preference | P0 | Proposed | F-019 | `docs/features/F-004-profile/SPEC.md` | `docs/features/F-004-profile/PLAN.md` |
+| F-004 | User profile, onboarding, time-zone preference | P0 | Approved | F-019 | `docs/features/F-004-profile/SPEC.md` | `docs/features/F-004-profile/PLAN.md` |
 | F-005 | Routine CRUD — create, edit, archive, delete | P0 | Proposed | F-003, F-004 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
 | F-006 | Routine scheduling — recurring patterns (daily/weekly/monthly) | P0 | Proposed | F-005 | `docs/features/F-006-routine-scheduling/SPEC.md` | `docs/features/F-006-routine-scheduling/PLAN.md` |
 | F-007 | Check-in tracking — mark done/not done with optional note | P0 | Proposed | F-006 | `docs/features/F-007-check-in/SPEC.md` | `docs/features/F-007-check-in/PLAN.md` |
@@ -75,5 +75,6 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 | 2026-11-20 | F-023 closed as Done: Pinia auth store, `fetch` client with error-envelope mapping, login/logout wiring, router guard, boot-time session hydration, and Persian error messages (25 frontend tests green, live smoke test through the Vite proxy). |
 | 2026-11-20 | F-003 (RBAC) SPEC/PLAN approved and status moved to Approved; `/api/v1/healthz` alias added and logout redirect hardened against network failure. |
 | 2026-11-20 | F-003 closed as Done: `require_role` (`Literal` role, `FORBIDDEN` 403), test-only admin router, `create_admin.py` promote-by-email script, and frontend `UserRole` union (8 backend RBAC/service tests; 27 backend and 26 frontend tests green). |
+| 2026-11-22 | F-004 (Profile and Timezone UI) SPEC/PLAN approved; RED tests added for `authStore.updateTimezone()` and `ProfilePage.vue`. |
 | 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |

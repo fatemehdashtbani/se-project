@@ -137,4 +137,28 @@ describe('useAuthStore (F-023)', () => {
 
     expect(store.user).toBeNull();
   });
+
+  it('updateTimezone() persists the zone and reflects it on the user', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        message: 'Timezone updated successfully',
+        timezone: 'Asia/Tehran',
+      }),
+    );
+
+    const store = useAuthStore();
+    store.$patch({ user: USER });
+
+    await store.updateTimezone('Asia/Tehran');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/me/timezone',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({ timezone: 'Asia/Tehran' }),
+      }),
+    );
+    expect(store.user?.timezone).toBe('Asia/Tehran');
+  });
 });
