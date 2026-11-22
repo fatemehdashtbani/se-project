@@ -29,4 +29,12 @@ describe('router guard (F-023)', () => {
 
     expect(router.currentRoute.value.path).toBe('/login');
   });
+
+  it('redirects unauthenticated visitors from /profile to /login', async () => {
+    authStore.user = null;
+
+    await router.push('/profile');
+
+    expect(router.currentRoute.value.path).toBe('/login');
+  });
 });

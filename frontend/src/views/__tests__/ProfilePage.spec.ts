@@ -93,4 +93,16 @@ describe('ProfilePage (F-004)', () => {
     expect(wrapper.text()).toContain(VALIDATION_MESSAGE);
     expect(wrapper.text()).not.toContain(SUCCESS_MESSAGE);
   });
+
+  it('keeps a stored timezone that is missing from the curated list selectable', () => {
+    authStore.user = { ...USER, timezone: 'Antarctica/Troll' };
+
+    const wrapper = mount(ProfilePage);
+
+    const select = wrapper.get('select').element as HTMLSelectElement;
+    const values = Array.from(select.options).map((option) => option.value);
+
+    expect(values).toContain('Antarctica/Troll');
+    expect(select.value).toBe('Antarctica/Troll');
+  });
 });

@@ -50,6 +50,18 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** Persist a new IANA timezone and mirror the value the server stored. */
+    async updateTimezone(timezone: string): Promise<void> {
+      const response = await apiRequest<{ message: string; timezone: string }>(
+        '/api/v1/auth/me/timezone',
+        { method: 'PUT', body: { timezone } },
+      );
+
+      if (this.user) {
+        this.user.timezone = response.timezone;
+      }
+    },
+
     /** Hydrate the store from the HttpOnly session cookie on app boot. */
     async init(): Promise<void> {
       try {
