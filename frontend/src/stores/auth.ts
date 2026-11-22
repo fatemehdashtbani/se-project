@@ -62,6 +62,26 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** Create an account, then immediately establish a session for it.
+     *
+     * The outer isLoading guard keeps the submit button disabled across the
+     * register→login→me sequence instead of flickering in between calls.
+     */
+    async register(email: string, password: string): Promise<void> {
+      this.isLoading = true;
+
+      try {
+        await apiRequest<unknown>('/api/v1/auth/register', {
+          method: 'POST',
+          body: { email, password },
+        });
+
+        await this.login(email, password);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     /** Hydrate the store from the HttpOnly session cookie on app boot. */
     async init(): Promise<void> {
       try {

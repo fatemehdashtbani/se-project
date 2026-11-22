@@ -69,7 +69,9 @@
 
       <p class="mt-6 text-center text-sm text-gray-600">
         <span>حساب کاربری ندارید؟</span>
-        <a href="#" class="mr-1 font-medium text-blue-600 hover:underline">ثبت‌نام</a>
+        <RouterLink to="/register" class="mr-1 font-medium text-blue-600 hover:underline">
+          ثبت‌نام
+        </RouterLink>
       </p>
     </div>
   </div>
@@ -80,10 +82,8 @@ import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ApiError } from '@/shared/api/client';
 import { getPersianError } from '@/shared/utils/errors';
+import { validateEmail, validatePassword } from '@/shared/utils/validation';
 import { useAuthStore } from '@/stores/auth';
-
-const MIN_PASSWORD_LENGTH = 8;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -96,18 +96,8 @@ const serverError = ref('');
 const emit = defineEmits<{ submit: [payload: { email: string; password: string }] }>();
 
 function validate(): boolean {
-  const trimmedEmail = email.value.trim();
-
-  if (trimmedEmail === '') {
-    errors.email = 'ایمیل الزامی است';
-  } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
-    errors.email = 'فرمت ایمیل معتبر نیست';
-  } else {
-    errors.email = '';
-  }
-
-  errors.password =
-    password.value.length < MIN_PASSWORD_LENGTH ? 'رمز عبور باید حداقل ۸ کاراکتر باشد' : '';
+  errors.email = validateEmail(email.value) ?? '';
+  errors.password = validatePassword(password.value) ?? '';
 
   return errors.email === '' && errors.password === '';
 }

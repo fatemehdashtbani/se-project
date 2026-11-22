@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('@/views/ProfilePage.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/RegisterPage.vue'),
+    },
   ],
 });
 
