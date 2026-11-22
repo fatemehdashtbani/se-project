@@ -37,4 +37,10 @@ describe('router guard (F-023)', () => {
 
     expect(router.currentRoute.value.path).toBe('/login');
   });
+
+  it('exposes the public /register route', async () => {
+    await router.push('/register');
+
+    expect(router.currentRoute.value.name).toBe('register');
+  });
 });

@@ -161,4 +161,62 @@ describe('useAuthStore (F-023)', () => {
     );
     expect(store.user?.timezone).toBe('Asia/Tehran');
   });
+
+  it('register() creates the account and signs the user in', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(201, {
+          ...USER,
+          created_at: '2026-11-22T00:00:00',
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { message: 'Logged in successfully' }))
+      .mockResolvedValueOnce(jsonResponse(200, USER));
+
+    const store = useAuthStore();
+    await store.register(USER.email, 'secret123');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/auth/register',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ email: USER.email, password: 'secret123' }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ email: USER.email, password: 'secret123' }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/v1/auth/me',
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
+    );
+    expect(store.user).toEqual(USER);
+  });
+
+  it('register() does not sign in when the email is already taken', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(400, {
+        error: { code: 'EMAIL_ALREADY_EXISTS', message: 'Email is already registered.' },
+      }),
+    );
+
+    const store = useAuthStore();
+
+    await expect(store.register(USER.email, 'secret123')).rejects.toMatchObject({
+      status: 400,
+      code: 'EMAIL_ALREADY_EXISTS',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(store.user).toBeNull();
+  });
 });

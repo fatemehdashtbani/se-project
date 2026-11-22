@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import LoginPage from '../LoginPage.vue';
 import { ApiError } from '@/shared/api/client';
 import type { UserRole } from '@/stores/auth';
@@ -45,6 +45,12 @@ async function submit(wrapper: ReturnType<typeof mount>) {
   await wrapper.get('form').trigger('submit.prevent');
 }
 
+function mountPage() {
+  return mount(LoginPage, {
+    global: { stubs: { RouterLink: RouterLinkStub } },
+  });
+}
+
 describe('LoginPage (F-002)', () => {
   beforeEach(() => {
     loginMock.mockReset();
@@ -54,21 +60,21 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('renders the email and password inputs', () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     expect(wrapper.find('input[type="email"]').exists()).toBe(true);
     expect(wrapper.find('input[type="password"]').exists()).toBe(true);
   });
 
   it('renders the submit button with Persian text "ورود"', () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     const button = wrapper.get('button[type="submit"]');
     expect(button.text()).toBe('ورود');
   });
 
   it('renders the "فراموشی رمز عبور" and "ثبت‌نام" links', () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     const linkTexts = wrapper.findAll('a').map((link) => link.text());
     expect(linkTexts).toContain('فراموشی رمز عبور');
@@ -76,7 +82,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('shows a Persian error for the email when the form is submitted empty', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await submit(wrapper);
 
@@ -84,7 +90,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('shows a Persian error when the password is shorter than 8 characters', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, 'short');
     await submit(wrapper);
@@ -93,7 +99,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('shows a Persian error when the email is malformed', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, 'notanemail', VALID_PASSWORD);
     await submit(wrapper);
@@ -108,7 +114,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('shows no errors and emits submit when the form is fully valid', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, 'test@example.com', 'password123');
     await submit(wrapper);
@@ -120,7 +126,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('emits a submit event with the credentials when the form is valid', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
     await submit(wrapper);
@@ -131,7 +137,7 @@ describe('LoginPage (F-002)', () => {
   });
 
   it('submits the credentials through the auth store', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
     await submit(wrapper);
@@ -145,7 +151,7 @@ describe('LoginPage (F-002)', () => {
       new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password'),
     );
 
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
     await submit(wrapper);
@@ -159,18 +165,27 @@ describe('LoginPage (F-002)', () => {
   it('disables the submit button while a login is in flight', () => {
     authStore.isLoading = true;
 
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined();
   });
 
   it('redirects to the dashboard after a successful login', async () => {
-    const wrapper = mount(LoginPage);
+    const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
     await submit(wrapper);
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('links to the registration page', () => {
+    const wrapper = mountPage();
+
+    const link = wrapper.findComponent(RouterLinkStub);
+
+    expect(link.exists()).toBe(true);
+    expect(link.props('to')).toBe('/register');
   });
 });

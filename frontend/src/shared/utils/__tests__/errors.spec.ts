@@ -15,4 +15,8 @@ describe('getPersianError (F-023)', () => {
       'خطایی رخ داد. لطفاً دوباره تلاش کنید',
     );
   });
+
+  it('maps EMAIL_ALREADY_EXISTS to a Persian message', () => {
+    expect(getPersianError('EMAIL_ALREADY_EXISTS')).toBe('این ایمیل قبلاً ثبت شده است');
+  });
 });

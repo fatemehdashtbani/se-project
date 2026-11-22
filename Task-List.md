@@ -59,7 +59,8 @@ For every new feature:
 | F-017 | Production hardening — backup/restore, observability, security review | P0 | Proposed | F-001–F-014 | `docs/features/F-017-production-readiness/SPEC.md` | `docs/features/F-017-production-readiness/PLAN.md` |
 | F-018 | Upgrade frontend dependencies (ESLint 9, Vitest 2) to resolve audit warnings | P2 | Proposed | — | — | — |
 | F-019 | Identity Backend — Registration, JWT sessions (Hybrid), Argon2 | P0 | Done | F-001 | `docs/features/F-019-identity-backend/SPEC.md` | `docs/features/F-019-identity-backend/PLAN.md` |
-| F-023 | Frontend Auth Integration — Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
+| F-023 | Frontend Auth Integration - Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
+| F-025 | Frontend registration UI - `/register` form with auto-login | P0 | Approved | F-019, F-023 | `docs/features/F-025-register-ui/SPEC.md` | `docs/features/F-025-register-ui/PLAN.md` |
 
 ## Current sprint
 
