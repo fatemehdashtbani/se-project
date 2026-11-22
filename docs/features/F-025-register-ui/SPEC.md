@@ -1,6 +1,6 @@
 # Feature Specification — F-025 Frontend Registration UI
 
-- Status: Approved
+- Status: Implemented
 - Owner: Project team
 - Related backlog item: F-025
 - Related ADRs: ADR-0008 (FarsiUI)

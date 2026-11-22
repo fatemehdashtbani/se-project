@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
+import { configDefaults } from 'vitest/config';
 
 export default defineConfig({
   plugins: [vue()],
@@ -18,5 +19,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Playwright specs live in e2e/ and must never be collected by Vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

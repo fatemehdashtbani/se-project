@@ -21,6 +21,14 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+# The E2E database URL is not a secret; it must ship with the repo.
+!backend/.env.e2e
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+.playwright/
 
 # Python
 __pycache__/

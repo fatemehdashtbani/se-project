@@ -16,6 +16,6 @@
 5. **GREEN:** Update `router/index.ts` and `LoginPage.vue` (add link).
 
 ## 3. Completion checklist
-- [ ] Tests pass.
-- [ ] Links between login and register work.
-- [ ] Linters pass.
+- [x] Tests pass.
+- [x] Links between login and register work.
+- [x] Linters pass.
