@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes.auth import router as auth_router
+from app.api.routes.routines import router as routines_router
 from app.core.errors import (
     AppError,
     app_error_handler,
@@ -17,6 +18,7 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)  # t
 app.add_exception_handler(StarletteHTTPException, http_error_handler)  # type: ignore[arg-type]
 
 app.include_router(auth_router)
+app.include_router(routines_router)
 
 
 @app.get("/api/v1/healthz", tags=["health"])

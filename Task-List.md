@@ -61,6 +61,7 @@ For every new feature:
 | F-019 | Identity Backend — Registration, JWT sessions (Hybrid), Argon2 | P0 | Done | F-001 | `docs/features/F-019-identity-backend/SPEC.md` | `docs/features/F-019-identity-backend/PLAN.md` |
 | F-023 | Frontend Auth Integration - Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
 | F-025 | Frontend registration UI - `/register` form with auto-login | P0 | Done | F-019, F-023 | `docs/features/F-025-register-ui/SPEC.md` | `docs/features/F-025-register-ui/PLAN.md` |
+| F-026 | Auth UI redesign (split-screen, dark theme) and user profile fields | P0 | Done | F-019, F-025 | `docs/features/F-026-auth-redesign/SPEC.md` | `docs/features/F-026-auth-redesign/PLAN.md` |
 | F-005 | Routine CRUD - model, endpoints, ownership, store and dashboard UI | P1 | In progress | F-019, F-003 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
 
 ## Current sprint
@@ -80,5 +81,7 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 | 2026-11-22 | F-004 (Profile and Timezone UI) SPEC/PLAN approved; RED tests added for `authStore.updateTimezone()` and `ProfilePage.vue`. |
 | 2026-11-22 | F-004 closed as Done: profile page with curated+injected IANA list, `updateTimezone` store action, guarded `/profile` route, Dashboard link, and Persian success/error messages (35 frontend tests green; timezone round-trip verified live through the Vite proxy). |
 | 2026-11-22 | F-025 closed as Done: `/register` view with client validation and Persian errors, `authStore.register()` (register → login → me under one `isLoading` guard), public `/register` route, login↔register links, extracted `shared/utils/validation.ts`, and the first Playwright E2E suite covering register → dashboard → profile → timezone → reload → logout against a throwaway `e2e.db`. |
+| 2026-11-23 | F-005 backend GREEN: routine schemas, owner-scoped service, and `/api/v1/routines` routes (create/list/get/partial update/soft delete, foreign ids → 404 `ROUTINE_NOT_FOUND`, paginated list). The 14 previously RED tests now pass; backend suite is 48 passed. Frontend store and dashboard UI remain for F-005. |
+| 2026-11-23 | F-026 backfilled as Done: SPEC/PLAN written after the fact for the professor-requested auth redesign — `User` profile fields (`username`, `first_name`, `last_name`, `phone_number`) with migration `c7d18ab07c7d`, required registration fields, and the RTL split-screen dark auth layout (`AuthLayout.vue`). |
 | 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |

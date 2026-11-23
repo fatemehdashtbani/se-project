@@ -1,6 +1,6 @@
 # Implementation Plan — F-005 Routine CRUD
 
-- Status: Approved
+- Status: In Progress (backend complete; frontend pending)
 - Related SPEC: `SPEC.md`
 
 ## 1. Implementation approach
@@ -14,7 +14,8 @@
 4. **Frontend GREEN:** Implement store and UI.
 
 ## 3. Completion checklist
-- [ ] Backend tests pass.
+- [x] Backend tests pass (`tests/api/test_routines.py`, 14 tests).
 - [ ] Frontend tests pass.
-- [ ] Soft-delete works (recoverable in DB, hidden in UI).
-- [ ] Ownership is strictly enforced.
+- [x] Soft-delete keeps the row in the DB (`deleted_at`, `is_active=False`) and hides it from the API.
+- [ ] Soft-deleted routines are hidden in the UI (blocked on the frontend work).
+- [x] Ownership is strictly enforced (foreign ids answer 404 `ROUTINE_NOT_FOUND`).
