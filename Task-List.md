@@ -61,6 +61,7 @@ For every new feature:
 | F-019 | Identity Backend — Registration, JWT sessions (Hybrid), Argon2 | P0 | Done | F-001 | `docs/features/F-019-identity-backend/SPEC.md` | `docs/features/F-019-identity-backend/PLAN.md` |
 | F-023 | Frontend Auth Integration - Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
 | F-025 | Frontend registration UI - `/register` form with auto-login | P0 | Done | F-019, F-023 | `docs/features/F-025-register-ui/SPEC.md` | `docs/features/F-025-register-ui/PLAN.md` |
+| F-005 | Routine CRUD - model, endpoints, ownership, store and dashboard UI | P1 | In progress | F-019, F-003 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
 
 ## Current sprint
 
