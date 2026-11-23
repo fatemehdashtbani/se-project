@@ -99,7 +99,7 @@
         :disabled="authStore.isLoading"
         class="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        ورود به همیار
+        ورود
       </button>
     </form>
 

@@ -66,11 +66,11 @@ describe('LoginPage (F-002)', () => {
     expect(wrapper.find('input[type="password"]').exists()).toBe(true);
   });
 
-  it('renders the submit button with Persian text "ورود به همیار"', () => {
+  it('renders the submit button with Persian text "ورود"', () => {
     const wrapper = mountPage();
 
     const button = wrapper.get('button[type="submit"]');
-    expect(button.text()).toBe('ورود به همیار');
+    expect(button.text()).toBe('ورود');
   });
 
   it('renders the "فراموشی رمز عبور؟" and "ثبت‌نام" links', () => {
