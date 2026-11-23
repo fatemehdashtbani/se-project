@@ -42,6 +42,14 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(
         String(64), nullable=False, default="UTC", server_default="UTC"
     )
+    # Profile fields collected by the redesigned registration form. They stay
+    # nullable so accounts created before this feature remain valid.
+    username: Mapped[str | None] = mapped_column(
+        String(50), unique=True, index=True, nullable=True
+    )
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

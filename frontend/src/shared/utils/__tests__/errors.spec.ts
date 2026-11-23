@@ -19,4 +19,10 @@ describe('getPersianError (F-023)', () => {
   it('maps EMAIL_ALREADY_EXISTS to a Persian message', () => {
     expect(getPersianError('EMAIL_ALREADY_EXISTS')).toBe('این ایمیل قبلاً ثبت شده است');
   });
+
+  it('maps USERNAME_ALREADY_EXISTS to a Persian message', () => {
+    expect(getPersianError('USERNAME_ALREADY_EXISTS')).toBe(
+      'این نام کاربری قبلاً انتخاب شده است',
+    );
+  });
 });

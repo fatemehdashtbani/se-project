@@ -7,6 +7,7 @@ test-only endpoint never reaches production (SPEC section 4).
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from helpers import registration_payload
 from httpx import AsyncClient
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -35,9 +36,7 @@ app.include_router(router, prefix="/api/v1")
 
 
 async def _register(client: AsyncClient, email: str) -> None:
-    response = await client.post(
-        REGISTER_URL, json={"email": email, "password": PASSWORD}
-    )
+    response = await client.post(REGISTER_URL, json=registration_payload(email))
     assert response.status_code == 201, response.text
 
 

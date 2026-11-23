@@ -7,6 +7,7 @@ would: by taking a routine id that belongs to somebody else and asking for it.
 import uuid
 from typing import Any
 
+from helpers import registration_payload
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -20,9 +21,7 @@ PASSWORD = "secret123"
 
 
 async def _register(client: AsyncClient, email: str) -> None:
-    response = await client.post(
-        REGISTER_URL, json={"email": email, "password": PASSWORD}
-    )
+    response = await client.post(REGISTER_URL, json=registration_payload(email))
     assert response.status_code == 201, response.text
 
 

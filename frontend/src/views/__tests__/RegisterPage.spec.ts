@@ -34,10 +34,20 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
-const VALID_EMAIL = 'new@example.com';
-const VALID_PASSWORD = 'secret123';
 const MISMATCH_MESSAGE = 'رمز عبور و تکرار آن یکسان نیستند';
 const EMAIL_TAKEN_MESSAGE = 'این ایمیل قبلاً ثبت شده است';
+const USERNAME_TAKEN_MESSAGE = 'این نام کاربری قبلاً انتخاب شده است';
+const FIRST_NAME_REQUIRED_MESSAGE = 'نام الزامی است';
+
+const VALID = {
+  firstName: 'سارا',
+  lastName: 'احمدی',
+  username: 'sara_ahmadi',
+  phone: '0912 345 6789',
+  email: 'new@example.com',
+  password: 'secret123',
+  confirmation: 'secret123',
+};
 
 function mountPage() {
   return mount(RegisterPage, {
@@ -47,14 +57,19 @@ function mountPage() {
 
 async function fillForm(
   wrapper: ReturnType<typeof mount>,
-  email: string,
-  password: string,
-  confirmation: string,
+  overrides: Partial<typeof VALID> = {},
 ): Promise<void> {
-  await wrapper.get('input[type="email"]').setValue(email);
-  const passwordInputs = wrapper.findAll('input[type="password"]');
-  await passwordInputs[0].setValue(password);
-  await passwordInputs[1].setValue(confirmation);
+  const values = { ...VALID, ...overrides };
+
+  await wrapper.get('#register-first-name').setValue(values.firstName);
+  await wrapper.get('#register-last-name').setValue(values.lastName);
+  await wrapper.get('#register-username').setValue(values.username);
+  await wrapper.get('#register-phone').setValue(values.phone);
+  await wrapper.get('input[type="email"]').setValue(values.email);
+
+  const passwords = wrapper.findAll('input[type="password"]');
+  await passwords[0].setValue(values.password);
+  await passwords[1].setValue(values.confirmation);
 }
 
 async function submit(wrapper: ReturnType<typeof mount>): Promise<void> {
@@ -70,30 +85,52 @@ describe('RegisterPage (F-025)', () => {
     authStore.isLoading = false;
   });
 
-  it('renders the email, password, and confirmation inputs', () => {
+  it('renders the profile, email, and password inputs', () => {
     const wrapper = mountPage();
 
+    expect(wrapper.find('#register-first-name').exists()).toBe(true);
+    expect(wrapper.find('#register-last-name').exists()).toBe(true);
+    expect(wrapper.find('#register-username').exists()).toBe(true);
+    expect(wrapper.find('#register-phone').exists()).toBe(true);
     expect(wrapper.find('input[type="email"]').exists()).toBe(true);
     expect(wrapper.findAll('input[type="password"]')).toHaveLength(2);
+  });
+
+  it('refuses to submit when a required profile field is empty', async () => {
+    const wrapper = mountPage();
+
+    await fillForm(wrapper, { firstName: '   ' });
+    await submit(wrapper);
+
+    expect(wrapper.text()).toContain(FIRST_NAME_REQUIRED_MESSAGE);
+    expect(registerMock).not.toHaveBeenCalled();
   });
 
   it('refuses to submit when the passwords do not match', async () => {
     const wrapper = mountPage();
 
-    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD, 'different-password');
+    await fillForm(wrapper, { confirmation: 'different-password' });
     await submit(wrapper);
 
     expect(wrapper.text()).toContain(MISMATCH_MESSAGE);
     expect(registerMock).not.toHaveBeenCalled();
   });
 
-  it('registers with the entered email and password when the form is valid', async () => {
+  it('registers with the entered profile when the form is valid', async () => {
     const wrapper = mountPage();
 
-    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD, VALID_PASSWORD);
+    await fillForm(wrapper);
     await submit(wrapper);
 
-    expect(registerMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD);
+    expect(registerMock).toHaveBeenCalledWith({
+      email: VALID.email,
+      password: VALID.password,
+      username: VALID.username,
+      firstName: VALID.firstName,
+      lastName: VALID.lastName,
+      // The page strips the spaces people type into phone fields.
+      phoneNumber: '09123456789',
+    });
   });
 
   it('shows a Persian message when the email is already registered', async () => {
@@ -103,7 +140,7 @@ describe('RegisterPage (F-025)', () => {
 
     const wrapper = mountPage();
 
-    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD, VALID_PASSWORD);
+    await fillForm(wrapper);
     await submit(wrapper);
 
     const alerts = wrapper.findAll('[role="alert"]');
@@ -111,12 +148,27 @@ describe('RegisterPage (F-025)', () => {
     expect(alerts[0].text()).toBe(EMAIL_TAKEN_MESSAGE);
   });
 
+  it('shows a Persian message when the username is already taken', async () => {
+    registerMock.mockRejectedValueOnce(
+      new ApiError(400, 'USERNAME_ALREADY_EXISTS', 'Username is already taken.'),
+    );
+
+    const wrapper = mountPage();
+
+    await fillForm(wrapper);
+    await submit(wrapper);
+
+    const alerts = wrapper.findAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].text()).toBe(USERNAME_TAKEN_MESSAGE);
+  });
+
   it('redirects to the dashboard after a successful registration', async () => {
     registerMock.mockResolvedValueOnce(undefined);
 
     const wrapper = mountPage();
 
-    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD, VALID_PASSWORD);
+    await fillForm(wrapper);
     await submit(wrapper);
 
     expect(pushMock).toHaveBeenCalledWith('/dashboard');

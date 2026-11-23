@@ -7,6 +7,19 @@ const USER: User = {
   email: 'user@example.com',
   role: 'user',
   timezone: 'UTC',
+  username: 'user',
+  first_name: 'Sara',
+  last_name: 'Ahmadi',
+  phone_number: '09120000000',
+};
+
+const REGISTRATION = {
+  email: 'new@example.com',
+  password: 'secret123',
+  username: 'new_user',
+  firstName: 'Sara',
+  lastName: 'Ahmadi',
+  phoneNumber: '09123456789',
 };
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -174,7 +187,7 @@ describe('useAuthStore (F-023)', () => {
       .mockResolvedValueOnce(jsonResponse(200, USER));
 
     const store = useAuthStore();
-    await store.register(USER.email, 'secret123');
+    await store.register(REGISTRATION);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -182,7 +195,14 @@ describe('useAuthStore (F-023)', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify({ email: USER.email, password: 'secret123' }),
+        body: JSON.stringify({
+          email: REGISTRATION.email,
+          password: REGISTRATION.password,
+          username: REGISTRATION.username,
+          first_name: REGISTRATION.firstName,
+          last_name: REGISTRATION.lastName,
+          phone_number: REGISTRATION.phoneNumber,
+        }),
       }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -191,7 +211,10 @@ describe('useAuthStore (F-023)', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify({ email: USER.email, password: 'secret123' }),
+        body: JSON.stringify({
+          email: REGISTRATION.email,
+          password: REGISTRATION.password,
+        }),
       }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -211,7 +234,7 @@ describe('useAuthStore (F-023)', () => {
 
     const store = useAuthStore();
 
-    await expect(store.register(USER.email, 'secret123')).rejects.toMatchObject({
+    await expect(store.register(REGISTRATION)).rejects.toMatchObject({
       status: 400,
       code: 'EMAIL_ALREADY_EXISTS',
     });

@@ -4,10 +4,16 @@ const PASSWORD = 'secret123';
 const SUCCESS_MESSAGE = 'منطقه زمانی با موفقیت ذخیره شد';
 
 test('register, update the timezone, and log out', async ({ page }) => {
-  const email = `e2e-${Date.now()}@example.com`;
+  const stamp = Date.now();
+  const email = `e2e-${stamp}@example.com`;
+  const username = `e2e_${stamp}`;
 
   // 1-4: create the account through the real form.
   await page.goto('/register');
+  await page.locator('#register-first-name').fill('سارا');
+  await page.locator('#register-last-name').fill('احمدی');
+  await page.locator('#register-username').fill(username);
+  await page.locator('#register-phone').fill('09121234567');
   await page.locator('#register-email').fill(email);
   await page.locator('#register-password').fill(PASSWORD);
   await page.locator('#register-confirm-password').fill(PASSWORD);

@@ -66,19 +66,41 @@ describe('LoginPage (F-002)', () => {
     expect(wrapper.find('input[type="password"]').exists()).toBe(true);
   });
 
-  it('renders the submit button with Persian text "ورود"', () => {
+  it('renders the submit button with Persian text "ورود به همیار"', () => {
     const wrapper = mountPage();
 
     const button = wrapper.get('button[type="submit"]');
-    expect(button.text()).toBe('ورود');
+    expect(button.text()).toBe('ورود به همیار');
   });
 
-  it('renders the "فراموشی رمز عبور" and "ثبت‌نام" links', () => {
+  it('renders the "فراموشی رمز عبور؟" and "ثبت‌نام" links', () => {
     const wrapper = mountPage();
 
     const linkTexts = wrapper.findAll('a').map((link) => link.text());
-    expect(linkTexts).toContain('فراموشی رمز عبور');
+    expect(linkTexts).toContain('فراموشی رمز عبور؟');
     expect(linkTexts).toContain('ثبت‌نام');
+  });
+
+  it('offers an email/mobile toggle with mobile marked unavailable', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('ایمیل');
+    expect(wrapper.text()).toContain('موبایل');
+
+    const mobile = wrapper.findAll('button').find((button) => button.text().includes('موبایل'));
+    expect(mobile).toBeDefined();
+    expect(mobile?.attributes('disabled')).toBeDefined();
+    expect(mobile?.text()).toContain('به‌زودی');
+  });
+
+  it('renders a remember-me checkbox', async () => {
+    const wrapper = mountPage();
+
+    const checkbox = wrapper.get('input[type="checkbox"]');
+    expect(wrapper.text()).toContain('مرا به خاطر بسپار');
+
+    await checkbox.setValue(true);
+    expect((checkbox.element as HTMLInputElement).checked).toBe(true);
   });
 
   it('shows a Persian error for the email when the form is submitted empty', async () => {

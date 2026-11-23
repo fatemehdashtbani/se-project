@@ -18,7 +18,15 @@ async def _register(
     db_session_factory: async_sessionmaker[AsyncSession], email: str = EMAIL
 ) -> None:
     async with db_session_factory() as session:
-        await register_user(session, email=email, password=PASSWORD)
+        await register_user(
+            session,
+            email=email,
+            password=PASSWORD,
+            username=email.split("@", 1)[0],
+            first_name="Test",
+            last_name="User",
+            phone_number="09120000000",
+        )
 
 
 async def _role_of(

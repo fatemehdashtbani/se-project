@@ -73,7 +73,15 @@ def _token_response(
 )
 async def register(payload: RegisterRequest, session: SessionDep) -> UserResponse:
     """Create an account and return its public profile."""
-    user = await register_user(session, email=payload.email, password=payload.password)
+    user = await register_user(
+        session,
+        email=payload.email,
+        password=payload.password,
+        username=payload.username,
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        phone_number=payload.phone_number,
+    )
     return UserResponse.model_validate(user)
 
 

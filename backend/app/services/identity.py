@@ -32,6 +32,14 @@ class EmailAlreadyExistsError(AppError):
     message = "Email is already registered."
 
 
+class UsernameAlreadyExistsError(AppError):
+    """Raised when registration targets a username that is already taken."""
+
+    status_code = 400
+    code = "USERNAME_ALREADY_EXISTS"
+    message = "Username is already taken."
+
+
 class InvalidCredentialsError(AppError):
     """Raised for both unknown emails and wrong passwords, without distinguishing them."""
 
@@ -56,20 +64,49 @@ class InvalidRefreshTokenError(AppError):
     message = "Refresh token is invalid or expired."
 
 
-async def register_user(session: AsyncSession, *, email: str, password: str) -> User:
-    """Create a user with a unique, lowercased email and an Argon2id hash."""
+async def register_user(
+    session: AsyncSession,
+    *,
+    email: str,
+    password: str,
+    username: str,
+    first_name: str,
+    last_name: str,
+    phone_number: str,
+) -> User:
+    """Create a user with a unique email and username plus an Argon2id hash."""
     existing = await session.scalar(select(User.id).where(User.email == email))
     if existing is not None:
         raise EmailAlreadyExistsError
 
-    user = User(email=email, password_hash=hash_password(password))
+    taken_username = await session.scalar(
+        select(User.id).where(User.username == username)
+    )
+    if taken_username is not None:
+        raise UsernameAlreadyExistsError
+
+    user = User(
+        email=email,
+        password_hash=hash_password(password),
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        phone_number=phone_number,
+    )
     session.add(user)
 
     try:
         await session.commit()
     except IntegrityError as exc:
-        # Lost a race against a concurrent registration for the same email.
+        # Lost a race against a concurrent registration for the same email or
+        # username. The constraint name is dialect-specific, so ask the database
+        # which value collided instead of parsing the driver message.
         await session.rollback()
+        raced_username = await session.scalar(
+            select(User.id).where(User.username == username)
+        )
+        if raced_username is not None:
+            raise UsernameAlreadyExistsError from exc
         raise EmailAlreadyExistsError from exc
 
     await session.refresh(user)

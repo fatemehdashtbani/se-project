@@ -7,6 +7,7 @@ import hashlib
 import uuid
 from datetime import UTC, datetime, timedelta
 
+from helpers import registration_payload
 from httpx import AsyncClient, Response
 from jose import jwt
 from sqlalchemy import select
@@ -28,7 +29,9 @@ PASSWORD = "secret123"
 async def _register_user(
     client: AsyncClient, email: str, password: str = PASSWORD
 ) -> Response:
-    return await client.post(REGISTER_URL, json={"email": email, "password": password})
+    return await client.post(
+        REGISTER_URL, json=registration_payload(email, password=password)
+    )
 
 
 async def _login(client: AsyncClient, email: str, password: str = PASSWORD) -> Response:
@@ -83,7 +86,7 @@ async def test_register_creates_user_with_hashed_password(
 ) -> None:
     response = await client.post(
         REGISTER_URL,
-        json={"email": "New.User@Example.com", "password": "secret123"},
+        json=registration_payload("New.User@Example.com", password="secret123"),
     )
 
     assert response.status_code == 201
@@ -106,7 +109,7 @@ async def test_register_creates_user_with_hashed_password(
 
 
 async def test_register_rejects_duplicate_email(client: AsyncClient) -> None:
-    payload = {"email": "duplicate@example.com", "password": "secret123"}
+    payload = registration_payload("duplicate@example.com")
 
     first = await client.post(REGISTER_URL, json=payload)
     assert first.status_code == 201
@@ -120,7 +123,7 @@ async def test_register_rejects_duplicate_email(client: AsyncClient) -> None:
 async def test_register_rejects_short_password(client: AsyncClient) -> None:
     response = await client.post(
         REGISTER_URL,
-        json={"email": "short@example.com", "password": "short"},
+        json=registration_payload("short@example.com", password="short"),
     )
 
     assert response.status_code == 422
@@ -130,7 +133,7 @@ async def test_register_rejects_short_password(client: AsyncClient) -> None:
 async def test_register_rejects_invalid_email(client: AsyncClient) -> None:
     response = await client.post(
         REGISTER_URL,
-        json={"email": "notanemail", "password": "secret123"},
+        json=registration_payload("notanemail"),
     )
 
     assert response.status_code == 422
@@ -217,11 +220,16 @@ async def test_me_returns_current_user(client: AsyncClient) -> None:
     response = await client.get(ME_URL)
 
     assert response.status_code == 200
+    profile = registration_payload(email)
     assert response.json() == {
         "id": user_id,
         "email": email,
         "role": "user",
         "timezone": "UTC",
+        "username": profile["username"],
+        "first_name": profile["first_name"],
+        "last_name": profile["last_name"],
+        "phone_number": profile["phone_number"],
     }
 
 

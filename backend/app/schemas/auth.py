@@ -8,6 +8,8 @@ from zoneinfo import available_timezones
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+PHONE_PATTERN = re.compile(r"^\+?[0-9]{7,15}$")
+USERNAME_PATTERN = re.compile(r"^[^\s]{3,50}$")
 
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128
@@ -22,17 +24,51 @@ def normalize_email(value: str) -> str:
 
 
 class RegisterRequest(BaseModel):
-    """Payload accepted by ``POST /api/v1/auth/register``."""
+    """Payload accepted by ``POST /api/v1/auth/register``.
+
+    The profile fields are required for new accounts. They are stored as
+    nullable columns so users registered before the redesign keep working.
+    """
 
     email: str = Field(max_length=320)
     password: str = Field(
         min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH
     )
+    username: str = Field(min_length=3, max_length=50)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone_number: str = Field(min_length=7, max_length=20)
 
     @field_validator("email")
     @classmethod
     def normalize(cls, value: str) -> str:
         return normalize_email(value)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        """Trim the username and reject embedded whitespace."""
+        username = value.strip()
+        if not USERNAME_PATTERN.fullmatch(username):
+            raise ValueError("invalid username")
+        return username
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        name = value.strip()
+        if not name:
+            raise ValueError("name must not be blank")
+        return name
+
+    @field_validator("phone_number")
+    @classmethod
+    def normalize_phone_number(cls, value: str) -> str:
+        """Drop the spaces and dashes people type, then check the digits."""
+        phone = re.sub(r"[\s-]", "", value)
+        if not PHONE_PATTERN.fullmatch(phone):
+            raise ValueError("invalid phone number")
+        return phone
 
 
 class LoginRequest(BaseModel):
@@ -60,6 +96,10 @@ class UserResponse(BaseModel):
     email: str
     role: str
     timezone: str
+    username: str | None
+    first_name: str | None
+    last_name: str | None
+    phone_number: str | None
     created_at: datetime
 
 
@@ -72,6 +112,10 @@ class MeResponse(BaseModel):
     email: str
     role: str
     timezone: str
+    username: str | None
+    first_name: str | None
+    last_name: str | None
+    phone_number: str | None
 
 
 class TimezoneUpdateRequest(BaseModel):

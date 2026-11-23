@@ -8,6 +8,20 @@ export interface User {
   email: string;
   role: UserRole;
   timezone: string;
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone_number: string | null;
+}
+
+/** Registration form values, using the client's camelCase naming. */
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -67,16 +81,23 @@ export const useAuthStore = defineStore('auth', {
      * The outer isLoading guard keeps the submit button disabled across the
      * register→login→me sequence instead of flickering in between calls.
      */
-    async register(email: string, password: string): Promise<void> {
+    async register(payload: RegisterPayload): Promise<void> {
       this.isLoading = true;
 
       try {
         await apiRequest<unknown>('/api/v1/auth/register', {
           method: 'POST',
-          body: { email, password },
+          body: {
+            email: payload.email,
+            password: payload.password,
+            username: payload.username,
+            first_name: payload.firstName,
+            last_name: payload.lastName,
+            phone_number: payload.phoneNumber,
+          },
         });
 
-        await this.login(email, password);
+        await this.login(payload.email, payload.password);
       } finally {
         this.isLoading = false;
       }
