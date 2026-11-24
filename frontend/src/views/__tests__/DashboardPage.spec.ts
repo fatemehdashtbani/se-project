@@ -1,14 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
+import {
+  RouterLinkStub,
+  flushPromises,
+  mount,
+  type DOMWrapper,
+  type VueWrapper,
+} from '@vue/test-utils';
 import DashboardPage from '../DashboardPage.vue';
 import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import type { UserRole } from '@/stores/auth';
+import type { Routine } from '@/stores/routine';
 
-const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
+const {
+  authStore,
+  routineStore,
+  logoutMock,
+  pushMock,
+  fetchRoutinesMock,
+  createRoutineMock,
+  deleteRoutineMock,
+} = vi.hoisted(() => {
   const logoutMock = vi.fn();
   return {
     logoutMock,
     pushMock: vi.fn(),
+    fetchRoutinesMock: vi.fn(),
+    createRoutineMock: vi.fn(),
+    deleteRoutineMock: vi.fn(),
     authStore: {
       user: null as {
         id: string;
@@ -23,11 +41,22 @@ const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
       logout: logoutMock,
       init: vi.fn(),
     },
+    routineStore: {
+      routines: [] as Routine[],
+      isLoading: false,
+      fetchRoutines: vi.fn(),
+      createRoutine: vi.fn(),
+      deleteRoutine: vi.fn(),
+    },
   };
 });
 
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => authStore,
+}));
+
+vi.mock('@/stores/routine', () => ({
+  useRoutineStore: () => routineStore,
 }));
 
 vi.mock('vue-router', () => ({
@@ -43,10 +72,34 @@ const SIGNED_IN_USER = {
   username: 'sara_ahmadi',
 };
 
-describe('DashboardPage (F-023, F-026)', () => {
+const ROUTINE: Routine = {
+  id: '3f4a0d90-1b2c-4d3e-8f5a-6b7c8d9e0f1a',
+  title: 'صبحانه',
+  description: 'هر روز صبح ساعت ۷',
+  is_active: true,
+  created_at: '2026-11-24T06:00:00Z',
+  updated_at: '2026-11-24T06:00:00Z',
+};
+
+function findButton(wrapper: VueWrapper, text: string): DOMWrapper<Element> {
+  const button = wrapper.findAll('button').find((candidate) => candidate.text() === text);
+  if (!button) {
+    throw new Error(`Button with text "${text}" was not rendered`);
+  }
+  return button;
+}
+
+describe('DashboardPage (F-023, F-026, F-005)', () => {
   beforeEach(() => {
     logoutMock.mockReset();
     pushMock.mockReset();
+    fetchRoutinesMock.mockReset().mockResolvedValue(undefined);
+    createRoutineMock.mockReset().mockResolvedValue(undefined);
+    deleteRoutineMock.mockReset().mockResolvedValue(undefined);
+    routineStore.fetchRoutines = fetchRoutinesMock;
+    routineStore.createRoutine = createRoutineMock;
+    routineStore.deleteRoutine = deleteRoutineMock;
+    routineStore.routines = [];
     authStore.user = { ...SIGNED_IN_USER };
     authStore.isLoading = false;
   });
@@ -68,7 +121,7 @@ describe('DashboardPage (F-023, F-026)', () => {
     const wrapper = mountPage();
 
     expect(wrapper.text()).toContain(
-      'کاربر سارا به روتین کده خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.',
+      'کاربر سارا به روتین کده خوش آمدید؛ روتین‌های شما به\u200cزودی اینجا نمایش داده می\u200cشوند.',
     );
   });
 
@@ -111,13 +164,13 @@ describe('DashboardPage (F-023, F-026)', () => {
   it('renders the logout control with Persian text', () => {
     const wrapper = mountPage();
 
-    expect(wrapper.get('button[type="button"]').text()).toBe('خروج از حساب');
+    expect(findButton(wrapper, 'خروج از حساب').exists()).toBe(true);
   });
 
   it('logs out and redirects to /login', async () => {
     const wrapper = mountPage();
 
-    await wrapper.get('button[type="button"]').trigger('click');
+    await findButton(wrapper, 'خروج از حساب').trigger('click');
     await flushPromises();
 
     expect(logoutMock).toHaveBeenCalledTimes(1);
@@ -129,9 +182,68 @@ describe('DashboardPage (F-023, F-026)', () => {
 
     const wrapper = mountPage();
 
-    await wrapper.get('button[type="button"]').trigger('click');
+    await findButton(wrapper, 'خروج از حساب').trigger('click');
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/login');
+  });
+
+  it('fetches routines when mounted', () => {
+    mountPage();
+
+    expect(fetchRoutinesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the My Routines heading and the Persian empty state', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('روتین‌های من');
+    expect(wrapper.text()).toContain('هنوز هیچ روتینی نساخته\u200cاید');
+    expect(wrapper.text()).not.toContain(ROUTINE.title);
+  });
+
+  it('renders each routine with its title, description, and delete control', async () => {
+    routineStore.routines = [ROUTINE, { ...ROUTINE, id: 'second-id', title: 'ورزش', description: null }];
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('صبحانه');
+    expect(wrapper.text()).toContain('هر روز صبح ساعت ۷');
+    expect(wrapper.text()).toContain('ورزش');
+    expect(wrapper.findAll('button').filter((button) => button.text() === 'حذف')).toHaveLength(2);
+
+    await findButton(wrapper, 'حذف').trigger('click');
+
+    expect(deleteRoutineMock).toHaveBeenCalledWith(ROUTINE.id);
+  });
+
+  it('opens an inline form and saves a new routine', async () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.find('input#routine-title').exists()).toBe(false);
+
+    await findButton(wrapper, '+ روتین جدید').trigger('click');
+
+    const titleInput = wrapper.get('input#routine-title');
+    const descriptionInput = wrapper.get('textarea#routine-description');
+    expect(wrapper.get('label[for="routine-title"]').text()).toBe('عنوان');
+
+    await titleInput.setValue('خواب');
+    await descriptionInput.setValue('هر شب ساعت ۱۱');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(createRoutineMock).toHaveBeenCalledWith('خواب', 'هر شب ساعت ۱۱');
+    expect(wrapper.find('input#routine-title').exists()).toBe(false);
+  });
+
+  it('does not submit a blank title', async () => {
+    const wrapper = mountPage();
+    await findButton(wrapper, '+ روتین جدید').trigger('click');
+
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(createRoutineMock).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('عنوان روتین الزامی است.');
   });
 });

@@ -62,7 +62,8 @@ For every new feature:
 | F-023 | Frontend Auth Integration - Pinia store, API client, login wiring, route guard | P0 | Done | F-002, F-019 | `docs/features/F-023-frontend-auth/SPEC.md` | `docs/features/F-023-frontend-auth/PLAN.md` |
 | F-025 | Frontend registration UI - `/register` form with auto-login | P0 | Done | F-019, F-023 | `docs/features/F-025-register-ui/SPEC.md` | `docs/features/F-025-register-ui/PLAN.md` |
 | F-026 | Auth UI redesign (split-screen, dark theme) and user profile fields | P0 | Done | F-019, F-025 | `docs/features/F-026-auth-redesign/SPEC.md` | `docs/features/F-026-auth-redesign/PLAN.md` |
-| F-005 | Routine CRUD - model, endpoints, ownership, store and dashboard UI | P1 | In progress | F-019, F-003 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
+| F-028 | Profile & dashboard polish (icon, greeting, editable profile, mock password change, back button) | P2 | Done | F-019, F-026 | `docs/features/F-028-profile-dashboard-polish/SPEC.md` | `docs/features/F-028-profile-dashboard-polish/PLAN.md` |
+| F-005 | Routine CRUD - model, endpoints, ownership, store and dashboard UI | P1 | Done | F-019, F-003 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
 
 ## Current sprint
 
@@ -84,5 +85,7 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 | 2026-11-24 | Mobile login (`identifier` = email or phone, case/space normalized, ambiguous phones rejected) and the mocked `POST /api/v1/auth/forgot-password` endpoint; dark-theme dashboard/profile with the profile icon, read-only profile fields, and a new `/forgot-password` page. Not yet covered by a dedicated F-### SPEC/PLAN. |
 | 2026-11-23 | F-005 backend GREEN: routine schemas, owner-scoped service, and `/api/v1/routines` routes (create/list/get/partial update/soft delete, foreign ids → 404 `ROUTINE_NOT_FOUND`, paginated list). The 14 previously RED tests now pass; backend suite is 48 passed. Frontend store and dashboard UI remain for F-005. |
 | 2026-11-23 | F-026 backfilled as Done: SPEC/PLAN written after the fact for the professor-requested auth redesign — `User` profile fields (`username`, `first_name`, `last_name`, `phone_number`) with migration `c7d18ab07c7d`, required registration fields, and the RTL split-screen dark auth layout (`AuthLayout.vue`). |
+| 2026-11-24 | F-028 backfilled as Done: SPEC/PLAN recorded for the profile/dashboard polish (profile icon, dynamic greeting, editable profile, mock password change, dashboard back button). |
+| 2026-11-24 | F-005 completed with `useRoutineStore` (fetch/create/delete through `/api/v1/routines`) and the dashboard routine list with Persian empty state, inline create form, and delete controls; frontend store/component tests added. |
 | 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |
