@@ -15,16 +15,17 @@
 
           <button
             type="button"
-            class="rounded-lg px-2 py-1.5 text-sm font-medium text-white transition-colors hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+            aria-label="خروج از حساب"
+            class="rounded-lg p-1.5 text-white transition-colors hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
             @click="handleLogout"
           >
-            خروج از حساب
+            <LogoutIcon class="h-6 w-6" />
           </button>
         </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <main class="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6">
       <h1 class="text-2xl font-bold text-white">داشبورد</h1>
       <p class="mt-2 text-sm text-slate-400">
         کاربر {{ authStore.user?.first_name || authStore.user?.username || 'کاربر' }} به روتین کده
@@ -112,12 +113,16 @@
         </form>
       </section>
     </main>
+
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import BottomNav from '@/components/BottomNav.vue';
+import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRoutineStore } from '@/stores/routine';

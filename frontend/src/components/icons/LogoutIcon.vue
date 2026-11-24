@@ -1,0 +1,3 @@
+<template>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor" width="24" height="24"><g id="_108_log-out-01" data-name="108 log-out-01"><path d="M9.32,22.73,3.61,17.44a2,2,0,0,1,0-2.85L9.32,9.27l1.36,1.46L5,16l5.71,5.24Z"/><rect x="5" y="15" width="15" height="2"/><path d="M26,29H16a3,3,0,0,1-3-3V19h2v7a1,1,0,0,0,1,1H26a1,1,0,0,0,1-1V6a1,1,0,0,0-1-1H16a1,1,0,0,0-1,1v6.93H13V6a3,3,0,0,1,3-3H26a3,3,0,0,1,3,3V26A3,3,0,0,1,26,29Z"/></g></svg>
+</template>

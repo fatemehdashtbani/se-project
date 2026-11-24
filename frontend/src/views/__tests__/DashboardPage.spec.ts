@@ -7,7 +7,9 @@ import {
   type VueWrapper,
 } from '@vue/test-utils';
 import DashboardPage from '../DashboardPage.vue';
+import BottomNav from '@/components/BottomNav.vue';
 import ProfileIcon from '@/components/icons/ProfileIcon.vue';
+import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import type { UserRole } from '@/stores/auth';
 import type { Routine } from '@/stores/routine';
 
@@ -161,16 +163,17 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
     expect(wrapper.get('header').classes()).toContain('bg-slate-900');
   });
 
-  it('renders the logout control with Persian text', () => {
+  it('renders the header logout control with the logout icon', () => {
     const wrapper = mountPage();
 
-    expect(findButton(wrapper, 'خروج از حساب').exists()).toBe(true);
+    const logoutButton = wrapper.get('button[aria-label="خروج از حساب"]');
+    expect(logoutButton.findComponent(LogoutIcon).exists()).toBe(true);
   });
 
   it('logs out and redirects to /login', async () => {
     const wrapper = mountPage();
 
-    await findButton(wrapper, 'خروج از حساب').trigger('click');
+    await wrapper.get('button[aria-label="خروج از حساب"]').trigger('click');
     await flushPromises();
 
     expect(logoutMock).toHaveBeenCalledTimes(1);
@@ -182,10 +185,16 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
 
     const wrapper = mountPage();
 
-    await findButton(wrapper, 'خروج از حساب').trigger('click');
+    await wrapper.get('button[aria-label="خروج از حساب"]').trigger('click');
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/login');
+  });
+
+  it('renders the shared bottom navigation', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.findComponent(BottomNav).exists()).toBe(true);
   });
 
   it('fetches routines when mounted', () => {

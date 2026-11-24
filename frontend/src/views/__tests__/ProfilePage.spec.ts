@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import ProfilePage from '../ProfilePage.vue';
+import BottomNav from '@/components/BottomNav.vue';
 import HomeIcon from '@/components/icons/HomeIcon.vue';
 import { ApiError } from '@/shared/api/client';
 import type { UserRole } from '@/stores/auth';
 
-const { authStore, updateTimezoneMock } = vi.hoisted(() => {
+const { authStore, updateTimezoneMock, pushMock } = vi.hoisted(() => {
   const updateTimezoneMock = vi.fn();
   return {
     updateTimezoneMock,
+    pushMock: vi.fn(),
     authStore: {
       user: null as {
         id: string;
@@ -31,6 +33,10 @@ const { authStore, updateTimezoneMock } = vi.hoisted(() => {
 
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => authStore,
+}));
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: pushMock }),
 }));
 
 const USER = {
@@ -62,6 +68,7 @@ function passwordToggle(wrapper: ReturnType<typeof mount>) {
 describe('ProfilePage (F-004, F-026)', () => {
   beforeEach(() => {
     updateTimezoneMock.mockReset();
+    pushMock.mockReset();
     authStore.user = { ...USER };
     authStore.isLoading = false;
   });
@@ -75,6 +82,12 @@ describe('ProfilePage (F-004, F-026)', () => {
     expect(link.props('to')).toBe('/dashboard');
     expect(link.attributes('aria-label')).toBe('بازگشت به داشبورد');
     expect(link.findComponent(HomeIcon).exists()).toBe(true);
+  });
+
+  it('renders the shared bottom navigation', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.findComponent(BottomNav).exists()).toBe(true);
   });
 
   it('renders the profile fields as editable inputs pre-filled from the user', () => {

@@ -1,5 +1,5 @@
 <template>
-  <div dir="rtl" class="min-h-screen bg-slate-900 px-4 py-12 text-slate-100">
+  <div dir="rtl" class="min-h-screen bg-slate-900 px-4 py-12 pb-24 text-slate-100">
     <div
       class="mx-auto w-full max-w-md rounded-2xl border border-slate-800 bg-slate-800/60 p-8 shadow-xl"
     >
@@ -196,11 +196,14 @@
         </form>
       </div>
     </div>
+
+    <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import BottomNav from '@/components/BottomNav.vue';
 import HomeIcon from '@/components/icons/HomeIcon.vue';
 import { ApiError } from '@/shared/api/client';
 import { getPersianError } from '@/shared/utils/errors';
