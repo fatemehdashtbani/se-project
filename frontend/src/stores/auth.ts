@@ -24,6 +24,13 @@ export interface RegisterPayload {
   phoneNumber: string;
 }
 
+/** Editable profile fields collected by the profile form. */
+export interface ProfilePayload {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
@@ -76,6 +83,31 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** Persist the editable profile fields and mirror the stored user. */
+    async updateProfile(payload: ProfilePayload): Promise<void> {
+      const user = await apiRequest<User>('/api/v1/auth/me', {
+        method: 'PUT',
+        body: {
+          first_name: payload.firstName,
+          last_name: payload.lastName,
+          phone_number: payload.phoneNumber,
+        },
+      });
+
+      this.user = user;
+    },
+
+    /** Replace the account password after the server verifies the current one. */
+    async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+      await apiRequest<{ message: string }>('/api/v1/auth/me/password', {
+        method: 'PUT',
+        body: {
+          current_password: currentPassword,
+          new_password: newPassword,
+        },
+      });
+    },
+
     /** Create an account, then immediately establish a session for it.
      *
      * The outer isLoading guard keeps the submit button disabled across the
@@ -103,11 +135,19 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /** Request a password-reset link (backend mock until F-022). */
+    /** Ask the backend to email a single-use password-reset link (F-022). */
     async forgotPassword(email: string): Promise<void> {
       await apiRequest<{ message: string }>('/api/v1/auth/forgot-password', {
         method: 'POST',
         body: { email },
+      });
+    },
+
+    /** Set a new password using the token from the reset email. */
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+      await apiRequest<{ message: string }>('/api/v1/auth/reset-password', {
+        method: 'POST',
+        body: { token, new_password: newPassword },
       });
     },
 

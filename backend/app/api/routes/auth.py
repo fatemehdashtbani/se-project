@@ -6,26 +6,41 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_email_sender
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
+from app.infrastructure.email import (
+    EmailSender,
+    build_password_reset_email,
+)
 from app.schemas.auth import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     MeResponse,
+    ProfileUpdateRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TimezoneUpdateRequest,
     UserResponse,
+)
+from app.services.password_reset import (
+    build_reset_url,
+    discard_password_reset,
+    request_password_reset,
+    reset_password,
 )
 from app.services.identity import (
     InvalidCredentialsError,
     authenticate_user,
+    change_password,
     issue_tokens,
     register_user,
     revoke_refresh_token,
     rotate_refresh_token,
+    update_profile,
     update_timezone,
 )
 
@@ -33,6 +48,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 
 
 def _session_cookie(
@@ -100,14 +116,48 @@ async def login(payload: LoginRequest, session: SessionDep) -> JSONResponse:
 
 
 @router.post("/forgot-password")
-async def forgot_password(payload: ForgotPasswordRequest) -> dict[str, str]:
-    """Accept a password-reset request (mock; F-022 will send the email).
+async def forgot_password(
+    payload: ForgotPasswordRequest, session: SessionDep, sender: EmailSenderDep
+) -> dict[str, str]:
+    """Email a single-use reset link when the address is registered (F-022).
 
-    The response is identical for every valid address, so this endpoint cannot
-    be used to discover which emails are registered. ``payload`` is validated
-    only to reject malformed input before the future mailer sees it.
+    The response is identical for known and unknown addresses, so this endpoint
+    cannot be used to discover which emails have accounts. A per-account
+    cooldown makes repeated requests stop sending without changing the response.
+
+    When the relay fails the request fails: the token is discarded and the
+    client sees EMAIL_DELIVERY_FAILED rather than a claim that an email was sent.
     """
+    requested = await request_password_reset(session, email=payload.email)
+
+    if requested is not None:
+        email, token = requested
+        settings = get_settings()
+        content = build_password_reset_email(
+            reset_url=build_reset_url(token),
+            ttl_minutes=settings.password_reset_ttl_minutes,
+        )
+        try:
+            await sender.send(to=email, content=content)
+        except AppError:
+            # Never leave a usable token behind for an email nobody received.
+            await discard_password_reset(session, token=token)
+            raise
+
     return {"message": "Reset link sent"}
+
+
+@router.post("/reset-password")
+async def complete_password_reset(
+    payload: ResetPasswordRequest, session: SessionDep
+) -> dict[str, str]:
+    """Set a new password from a single-use emailed token (F-022).
+
+    Every refresh-token family for the account is revoked, so anyone signed in
+    with the old password is signed out.
+    """
+    await reset_password(session, token=payload.token, new_password=payload.new_password)
+    return {"message": "Password reset successfully"}
 
 
 @router.post("/refresh")
@@ -129,6 +179,35 @@ async def refresh(request: Request, session: SessionDep) -> JSONResponse:
 async def me(current_user: CurrentUserDep) -> MeResponse:
     """Return the authenticated user's own profile."""
     return MeResponse.model_validate(current_user)
+
+
+@router.put("/me", response_model=MeResponse)
+async def update_my_profile(
+    payload: ProfileUpdateRequest,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+) -> MeResponse:
+    """Update the signed-in user's own name and phone number (F-031)."""
+    user = await update_profile(session, current_user, payload)
+    return MeResponse.model_validate(user)
+
+
+@router.put("/me/password")
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+) -> dict[str, str]:
+    """Verify the current password, store the new hash, end other sessions (F-031)."""
+    await change_password(
+        session,
+        current_user,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+        current_refresh_token=request.cookies.get("refresh_token"),
+    )
+    return {"message": "Password changed successfully"}
 
 
 @router.put("/me/timezone")

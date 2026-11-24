@@ -19,7 +19,8 @@ test('register, update the timezone, and log out', async ({ page }) => {
   await page.locator('#register-confirm-password').fill(PASSWORD);
   await page.locator('button[type="submit"]').click();
 
-  // 5-6: auto-login lands on the dashboard with the profile link.
+  // 5-6: auto-login lands on the dashboard, where the bottom navigation
+  // carries the profile link (the top bar holds no account controls).
   await expect(page).toHaveURL(/\/dashboard$/);
   const profileLink = page.getByRole('link', { name: 'پروفایل' });
   await expect(profileLink).toBeVisible();
@@ -29,21 +30,30 @@ test('register, update the timezone, and log out', async ({ page }) => {
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByText(email)).toBeVisible();
 
-  // 9-10: changing the zone reports success.
+  // 9-10: the profile form writes to the database, not just the view.
+  await page.locator('#profile-first-name').fill('سارا');
+  await page.locator('#profile-last-name').fill('احمدی');
+  await page.locator('#profile-phone').fill('09121234567');
+  await page.locator('#profile-form button[type="submit"]').click();
+  await expect(page.getByRole('status')).toHaveText('اطلاعات با موفقیت ذخیره شد');
+
+  // 11-12: changing the zone reports success.
   await page.locator('#timezone').selectOption('Asia/Tehran');
   await page.locator('#timezone-form button[type="submit"]').click();
   await expect(page.getByRole('status')).toHaveText(SUCCESS_MESSAGE);
 
-  // The value must survive a full reload, i.e. it was persisted server-side
-  // and the boot-time `init()` hydration works with a real cookie.
+  // Both values must survive a full reload, i.e. they were persisted
+  // server-side and the boot-time `init()` hydration works with a real cookie.
   await page.reload();
   await expect(page.locator('#timezone')).toHaveValue('Asia/Tehran');
+  await expect(page.locator('#profile-first-name')).toHaveValue('سارا');
+  await expect(page.locator('#profile-last-name')).toHaveValue('احمدی');
   await expect(page).toHaveURL(/\/profile$/);
 
-  // 11-12: back to the dashboard, then log out.
+  // 13-14: back to the dashboard, then log out.
   await page.goBack();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await page.getByRole('button', { name: 'خروج از حساب' }).click();
+  await page.getByRole('button', { name: 'خروج' }).click();
   await expect(page).toHaveURL(/\/login$/);
 
   // The session is really gone: the guard bounces /dashboard.

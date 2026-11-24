@@ -23,7 +23,7 @@ vi.mock('@/stores/auth', () => ({
 }));
 
 const VALID_EMAIL = 'user@example.com';
-const SUCCESS_MESSAGE = 'لینک بازیابی ارسال شد';
+const SUCCESS_MESSAGE = 'درخواست بازیابی ثبت شد، ایمیل خود را بررسی کنید';
 
 function mountPage() {
   return mount(ForgotPasswordPage, {
@@ -45,7 +45,7 @@ describe('ForgotPasswordPage (F-026)', () => {
     const wrapper = mountPage();
 
     expect(wrapper.find('input[type="email"]').exists()).toBe(true);
-    expect(wrapper.get('button[type="submit"]').text()).toBe('ارسال لینک بازیابی');
+    expect(wrapper.get('button[type="submit"]').text()).toBe('درخواست بازیابی رمز');
   });
 
   it('shows a Persian error and does not call the API for a malformed email', async () => {
@@ -70,6 +70,18 @@ describe('ForgotPasswordPage (F-026)', () => {
 
     const status = wrapper.get('[role="status"]');
     expect(status.text()).toBe(SUCCESS_MESSAGE);
+  });
+
+  it('tells the user to check their inbox now that the email is really sent', async () => {
+    forgotPasswordMock.mockResolvedValueOnce(undefined);
+
+    const wrapper = mountPage();
+
+    await wrapper.get('input[type="email"]').setValue(VALID_EMAIL);
+    await submit(wrapper);
+
+    expect(wrapper.get('[role="status"]').text()).toBe(SUCCESS_MESSAGE);
+    expect(wrapper.text()).not.toContain('هنوز فعال نشده');
   });
 
   it('shows a Persian error when the backend rejects the request', async () => {

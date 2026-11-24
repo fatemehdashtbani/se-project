@@ -1,23 +1,13 @@
 <template>
   <div dir="rtl" class="min-h-screen bg-slate-900 px-4 py-12 pb-24 text-slate-100">
     <div
-      class="mx-auto w-full max-w-md rounded-2xl border border-slate-800 bg-slate-800/60 p-8 shadow-xl"
+      class="mx-auto w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-800/60 p-6 shadow-xl sm:p-8 lg:max-w-3xl"
     >
-      <header class="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-bold text-white">پروفایل</h1>
-          <p class="mt-2 text-sm text-slate-400">
-            اطلاعات حساب و منطقه زمانی خود را مدیریت کنید.
-          </p>
-        </div>
-
-        <RouterLink
-          to="/dashboard"
-          aria-label="بازگشت به داشبورد"
-          class="rounded-full p-1.5 text-slate-300 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60"
-        >
-          <HomeIcon class="h-6 w-6" />
-        </RouterLink>
+      <header class="mb-6">
+        <h1 class="text-2xl font-bold text-white">پروفایل</h1>
+        <p class="mt-2 text-sm text-slate-400">
+          اطلاعات حساب و منطقه زمانی خود را مدیریت کنید.
+        </p>
       </header>
 
       <p
@@ -37,6 +27,7 @@
       </p>
 
       <form id="profile-form" class="space-y-4" novalidate @submit.prevent="handleProfileSubmit">
+        <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label for="profile-first-name" class="mb-2 block text-sm font-medium text-slate-300">
             نام
@@ -83,6 +74,8 @@
           <span class="text-sm font-medium text-white" dir="ltr">
             {{ authStore.user?.email }}
           </span>
+        </div>
+
         </div>
 
         <button
@@ -145,6 +138,7 @@
           novalidate
           @submit.prevent="handlePasswordSubmit"
         >
+          <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label for="current-password" class="mb-2 block text-sm font-medium text-slate-300">
               رمز فعلی
@@ -173,7 +167,7 @@
             />
           </div>
 
-          <div>
+          <div class="sm:col-span-2">
             <label for="confirm-new-password" class="mb-2 block text-sm font-medium text-slate-300">
               تکرار رمز جدید
             </label>
@@ -187,9 +181,12 @@
             />
           </div>
 
+          </div>
+
           <button
             type="submit"
-            class="w-full rounded-xl bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            :disabled="isSubmitting"
+            class="w-full rounded-xl bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             ثبت رمز جدید
           </button>
@@ -204,7 +201,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import BottomNav from '@/components/BottomNav.vue';
-import HomeIcon from '@/components/icons/HomeIcon.vue';
 import { ApiError } from '@/shared/api/client';
 import { getPersianError } from '@/shared/utils/errors';
 import { useAuthStore } from '@/stores/auth';
@@ -276,10 +272,24 @@ function resetFeedback(): void {
   serverError.value = '';
 }
 
-function handleProfileSubmit(): void {
+async function handleProfileSubmit(): Promise<void> {
   resetFeedback();
-  // Mock save: the write endpoint for profile fields ships with a later feature.
-  successMessage.value = PROFILE_SUCCESS_MESSAGE;
+  isSubmitting.value = true;
+
+  try {
+    await authStore.updateProfile({
+      firstName: firstName.value.trim(),
+      lastName: lastName.value.trim(),
+      phoneNumber: phoneNumber.value.trim(),
+    });
+    successMessage.value = PROFILE_SUCCESS_MESSAGE;
+  } catch (error) {
+    serverError.value = getPersianError(
+      error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',
+    );
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 
 async function handleTimezoneSubmit(): Promise<void> {
@@ -306,7 +316,7 @@ function togglePasswordForm(): void {
   confirmNewPassword.value = '';
 }
 
-function handlePasswordSubmit(): void {
+async function handlePasswordSubmit(): Promise<void> {
   resetFeedback();
 
   if (newPassword.value.length < 8) {
@@ -319,11 +329,24 @@ function handlePasswordSubmit(): void {
     return;
   }
 
-  // Mock change: no backend endpoint exists yet, so only the UI reacts.
-  showPasswordForm.value = false;
-  currentPassword.value = '';
-  newPassword.value = '';
-  confirmNewPassword.value = '';
-  successMessage.value = PASSWORD_SUCCESS_MESSAGE;
+  isSubmitting.value = true;
+
+  try {
+    await authStore.changePassword(currentPassword.value, newPassword.value);
+
+    // Only clear the inputs once the server stored the new hash, so a rejected
+    // current password leaves the form filled in for another try.
+    showPasswordForm.value = false;
+    currentPassword.value = '';
+    newPassword.value = '';
+    confirmNewPassword.value = '';
+    successMessage.value = PASSWORD_SUCCESS_MESSAGE;
+  } catch (error) {
+    serverError.value = getPersianError(
+      error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',
+    );
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>

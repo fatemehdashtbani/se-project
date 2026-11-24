@@ -7,10 +7,12 @@ from typing import Annotated, Literal
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.security import decode_access_token
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
+from app.infrastructure.email import EmailSender, SmtpEmailSender
 
 Role = Literal["user", "mentor", "admin"]
 
@@ -45,6 +47,11 @@ async def get_current_user(
         raise AppError("Authentication required", code="UNAUTHORIZED", status_code=401)
 
     return user
+
+
+def get_email_sender() -> EmailSender:
+    """Return the configured email transport; tests override this dependency."""
+    return SmtpEmailSender(get_settings())
 
 
 def require_role(required_role: Role) -> Callable[..., Awaitable[User]]:

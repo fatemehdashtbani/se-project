@@ -2,15 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import ProfilePage from '../ProfilePage.vue';
 import BottomNav from '@/components/BottomNav.vue';
-import HomeIcon from '@/components/icons/HomeIcon.vue';
 import { ApiError } from '@/shared/api/client';
 import type { UserRole } from '@/stores/auth';
 
-const { authStore, updateTimezoneMock, pushMock } = vi.hoisted(() => {
-  const updateTimezoneMock = vi.fn();
-  return {
-    updateTimezoneMock,
-    pushMock: vi.fn(),
+const { authStore, updateTimezoneMock, updateProfileMock, changePasswordMock, pushMock } =
+  vi.hoisted(() => {
+    const updateTimezoneMock = vi.fn();
+    const updateProfileMock = vi.fn();
+    const changePasswordMock = vi.fn();
+    return {
+      updateTimezoneMock,
+      updateProfileMock,
+      changePasswordMock,
+      pushMock: vi.fn(),
     authStore: {
       user: null as {
         id: string;
@@ -27,6 +31,8 @@ const { authStore, updateTimezoneMock, pushMock } = vi.hoisted(() => {
       logout: vi.fn(),
       init: vi.fn(),
       updateTimezone: updateTimezoneMock,
+      updateProfile: updateProfileMock,
+      changePassword: changePasswordMock,
     },
   };
 });
@@ -68,20 +74,22 @@ function passwordToggle(wrapper: ReturnType<typeof mount>) {
 describe('ProfilePage (F-004, F-026)', () => {
   beforeEach(() => {
     updateTimezoneMock.mockReset();
+    updateProfileMock.mockReset();
+    changePasswordMock.mockReset();
     pushMock.mockReset();
     authStore.user = { ...USER };
     authStore.isLoading = false;
   });
 
-  it('links back to the dashboard from the top-left home icon', () => {
+  it('keeps the header free of a back-to-dashboard control', () => {
     const wrapper = mountPage();
 
-    const link = wrapper.findComponent(RouterLinkStub);
+    const header = wrapper.get('header');
 
-    expect(link.exists()).toBe(true);
-    expect(link.props('to')).toBe('/dashboard');
-    expect(link.attributes('aria-label')).toBe('بازگشت به داشبورد');
-    expect(link.findComponent(HomeIcon).exists()).toBe(true);
+    expect(header.text()).toContain('پروفایل');
+    expect(header.findAllComponents(RouterLinkStub)).toHaveLength(0);
+    expect(header.findAll('button')).toHaveLength(0);
+    expect(wrapper.find('[aria-label="بازگشت به داشبورد"]').exists()).toBe(false);
   });
 
   it('renders the shared bottom navigation', () => {
@@ -102,6 +110,17 @@ describe('ProfilePage (F-004, F-026)', () => {
     expect(phone.value).toBe(USER.phone_number);
   });
 
+  it('shows the profile fields two per row on wide screens and one per row on mobile', () => {
+    const wrapper = mountPage();
+
+    const grid = wrapper.get('#profile-form').get('div');
+
+    expect(grid.classes()).toContain('grid');
+    expect(grid.classes()).toContain('sm:grid-cols-2');
+    expect(wrapper.get('#profile-form').get('div').findAll('input')).toHaveLength(3);
+    expect(wrapper.find('.max-w-2xl').exists()).toBe(true);
+  });
+
   it('keeps the email visible and read-only', () => {
     const wrapper = mountPage();
 
@@ -118,15 +137,36 @@ describe('ProfilePage (F-004, F-026)', () => {
     expect(firstName.value).toBe('');
   });
 
-  it('saves the profile locally with a Persian success message and no API call', async () => {
+  it('saves the profile through the store and shows a Persian success message', async () => {
+    updateProfileMock.mockResolvedValueOnce(undefined);
     const wrapper = mountPage();
 
     await wrapper.get('#profile-first-name').setValue('نگار');
+    await wrapper.get('#profile-last-name').setValue('کریمی');
+    await wrapper.get('#profile-phone').setValue('09123456789');
     await wrapper.get('#profile-form').trigger('submit');
     await flushPromises();
 
+    expect(updateProfileMock).toHaveBeenCalledWith({
+      firstName: 'نگار',
+      lastName: 'کریمی',
+      phoneNumber: '09123456789',
+    });
     expect(wrapper.get('[role="status"]').text()).toBe(PROFILE_SUCCESS_MESSAGE);
     expect(updateTimezoneMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a Persian error and no success message when the profile update fails', async () => {
+    updateProfileMock.mockRejectedValueOnce(
+      new ApiError(422, 'VALIDATION_ERROR', 'invalid phone number'),
+    );
+    const wrapper = mountPage();
+
+    await wrapper.get('#profile-form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(VALIDATION_MESSAGE);
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
   });
 
   it('offers an active change-password button', () => {
@@ -138,7 +178,7 @@ describe('ProfilePage (F-004, F-026)', () => {
     expect(toggle?.attributes('disabled')).toBeUndefined();
   });
 
-  it('toggles the mock password form with its three inputs', async () => {
+  it('toggles the password form with its three inputs', async () => {
     const wrapper = mountPage();
 
     expect(wrapper.find('#password-form').exists()).toBe(false);
@@ -154,7 +194,8 @@ describe('ProfilePage (F-004, F-026)', () => {
     expect(wrapper.find('#password-form').exists()).toBe(false);
   });
 
-  it('shows a Persian success message and closes the form after a mock password change', async () => {
+  it('changes the password through the store and closes the form', async () => {
+    changePasswordMock.mockResolvedValueOnce(undefined);
     const wrapper = mountPage();
 
     await passwordToggle(wrapper)?.trigger('click');
@@ -164,8 +205,27 @@ describe('ProfilePage (F-004, F-026)', () => {
     await wrapper.get('#password-form').trigger('submit');
     await flushPromises();
 
+    expect(changePasswordMock).toHaveBeenCalledWith('secret123', 'new-secret123');
     expect(wrapper.get('[role="status"]').text()).toBe(PASSWORD_SUCCESS_MESSAGE);
     expect(wrapper.find('#password-form').exists()).toBe(false);
+  });
+
+  it('keeps the form open and reports a Persian error for a wrong current password', async () => {
+    changePasswordMock.mockRejectedValueOnce(
+      new ApiError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect.'),
+    );
+    const wrapper = mountPage();
+
+    await passwordToggle(wrapper)?.trigger('click');
+    await wrapper.get('#current-password').setValue('wrong-password');
+    await wrapper.get('#new-password').setValue('new-secret123');
+    await wrapper.get('#confirm-new-password').setValue('new-secret123');
+    await wrapper.get('#password-form').trigger('submit');
+    await flushPromises();
+
+    expect(changePasswordMock).toHaveBeenCalledWith('wrong-password', 'new-secret123');
+    expect(wrapper.text()).toContain('رمز عبور فعلی نادرست است');
+    expect(wrapper.find('#password-form').exists()).toBe(true);
   });
 
   it('uses the dark theme for the page and inputs', () => {

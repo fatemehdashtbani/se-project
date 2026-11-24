@@ -199,6 +199,65 @@ describe('useAuthStore (F-023)', () => {
     expect(store.user?.timezone).toBe('Asia/Tehran');
   });
 
+  it('updateProfile() sends the profile fields and mirrors the stored user', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        ...USER,
+        first_name: 'نگار',
+        last_name: 'کریمی',
+        phone_number: '09123456789',
+      }),
+    );
+
+    const store = useAuthStore();
+    store.$patch({ user: USER });
+
+    await store.updateProfile({
+      firstName: 'نگار',
+      lastName: 'کریمی',
+      phoneNumber: '09123456789',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/me',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({
+          first_name: 'نگار',
+          last_name: 'کریمی',
+          phone_number: '09123456789',
+        }),
+      }),
+    );
+    expect(store.user?.first_name).toBe('نگار');
+    expect(store.user?.phone_number).toBe('09123456789');
+  });
+
+  it('changePassword() posts both passwords and keeps the session', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { message: 'Password changed successfully' }),
+    );
+
+    const store = useAuthStore();
+    store.$patch({ user: USER });
+
+    await store.changePassword('secret123', 'new-secret123');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/me/password',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({
+          current_password: 'secret123',
+          new_password: 'new-secret123',
+        }),
+      }),
+    );
+    expect(store.user).toEqual(USER);
+  });
+
   it('register() creates the account and signs the user in', async () => {
     fetchMock
       .mockResolvedValueOnce(

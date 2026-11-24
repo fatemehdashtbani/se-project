@@ -1,27 +1,8 @@
 <template>
   <div dir="rtl" class="min-h-screen bg-slate-900 text-slate-100">
     <header class="border-b border-slate-800 bg-slate-900">
-      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div class="mx-auto flex max-w-5xl items-center px-4 py-4 sm:px-6">
         <p class="text-xl font-extrabold tracking-tight text-white sm:text-2xl">روتین کده</p>
-
-        <div class="flex items-center gap-3 sm:gap-5">
-          <RouterLink
-            to="/profile"
-            aria-label="پروفایل"
-            class="rounded-full p-1 text-slate-300 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60"
-          >
-            <ProfileIcon class="h-7 w-7" />
-          </RouterLink>
-
-          <button
-            type="button"
-            aria-label="خروج از حساب"
-            class="rounded-lg p-1.5 text-white transition-colors hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
-            @click="handleLogout"
-          >
-            <LogoutIcon class="h-6 w-6" />
-          </button>
-        </div>
       </div>
     </header>
 
@@ -29,7 +10,7 @@
       <h1 class="text-2xl font-bold text-white">داشبورد</h1>
       <p class="mt-2 text-sm text-slate-400">
         کاربر {{ authStore.user?.first_name || authStore.user?.username || 'کاربر' }} به روتین کده
-        خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.
+        خوش آمدید.
       </p>
 
       <section class="mt-10 rounded-2xl border border-slate-800 bg-slate-800/40 p-5 sm:p-6">
@@ -120,16 +101,12 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import BottomNav from '@/components/BottomNav.vue';
-import LogoutIcon from '@/components/icons/LogoutIcon.vue';
-import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRoutineStore } from '@/stores/routine';
 
 const authStore = useAuthStore();
 const routineStore = useRoutineStore();
-const router = useRouter();
 
 const showCreateForm = ref(false);
 const newTitle = ref('');
@@ -177,17 +154,6 @@ async function handleDelete(id: string): Promise<void> {
     await routineStore.deleteRoutine(id);
   } catch {
     errorMessage.value = 'حذف روتین ناموفق بود.';
-  }
-}
-
-async function handleLogout(): Promise<void> {
-  try {
-    await authStore.logout();
-  } catch {
-    // The store has already dropped the local user in its own `finally`;
-    // a failed revoke must not trap the visitor inside the protected area.
-  } finally {
-    await router.push('/login');
   }
 }
 </script>

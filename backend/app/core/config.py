@@ -21,6 +21,24 @@ class Settings(BaseSettings):
 
     cookie_secure: bool = False
 
+    # Password-reset email delivery (F-022). The link points at the frontend,
+    # so the public site origin must be configured per environment.
+    frontend_base_url: str = "http://127.0.0.1:5173"
+    password_reset_ttl_minutes: int = 30
+    password_reset_resend_seconds: int = 60
+
+    # SMTP relay. Any provider (Resend, Mailgun, Postmark, Gmail) works; when
+    # ``smtp_host`` is empty the API reports EMAIL_NOT_CONFIGURED instead of
+    # pretending an email was sent.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "روتین کده"
+    smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

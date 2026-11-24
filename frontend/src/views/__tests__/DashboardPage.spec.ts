@@ -8,24 +8,17 @@ import {
 } from '@vue/test-utils';
 import DashboardPage from '../DashboardPage.vue';
 import BottomNav from '@/components/BottomNav.vue';
-import ProfileIcon from '@/components/icons/ProfileIcon.vue';
-import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import type { UserRole } from '@/stores/auth';
 import type { Routine } from '@/stores/routine';
 
 const {
   authStore,
   routineStore,
-  logoutMock,
-  pushMock,
   fetchRoutinesMock,
   createRoutineMock,
   deleteRoutineMock,
 } = vi.hoisted(() => {
-  const logoutMock = vi.fn();
   return {
-    logoutMock,
-    pushMock: vi.fn(),
     fetchRoutinesMock: vi.fn(),
     createRoutineMock: vi.fn(),
     deleteRoutineMock: vi.fn(),
@@ -40,7 +33,7 @@ const {
       } | null,
       isLoading: false,
       login: vi.fn(),
-      logout: logoutMock,
+      logout: vi.fn(),
       init: vi.fn(),
     },
     routineStore: {
@@ -59,10 +52,6 @@ vi.mock('@/stores/auth', () => ({
 
 vi.mock('@/stores/routine', () => ({
   useRoutineStore: () => routineStore,
-}));
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: pushMock }),
 }));
 
 const SIGNED_IN_USER = {
@@ -93,8 +82,6 @@ function findButton(wrapper: VueWrapper, text: string): DOMWrapper<Element> {
 
 describe('DashboardPage (F-023, F-026, F-005)', () => {
   beforeEach(() => {
-    logoutMock.mockReset();
-    pushMock.mockReset();
     fetchRoutinesMock.mockReset().mockResolvedValue(undefined);
     createRoutineMock.mockReset().mockResolvedValue(undefined);
     deleteRoutineMock.mockReset().mockResolvedValue(undefined);
@@ -123,8 +110,9 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
     const wrapper = mountPage();
 
     expect(wrapper.text()).toContain(
-      'کاربر سارا به روتین کده خوش آمدید؛ روتین‌های شما به\u200cزودی اینجا نمایش داده می\u200cشوند.',
+      'کاربر سارا به روتین کده خوش آمدید.',
     );
+    expect(wrapper.text()).not.toContain('به\u200cزودی');
   });
 
   it('falls back to the username, then to «کاربر»', () => {
@@ -135,25 +123,16 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
     expect(mountPage().text()).toContain('کاربر کاربر به روتین کده خوش آمدید');
   });
 
-  it('links to the profile page with the profile icon', () => {
+  it('keeps the header free of profile and logout controls', () => {
     const wrapper = mountPage();
 
-    const link = wrapper.findComponent(RouterLinkStub);
+    const header = wrapper.get('header');
 
-    expect(link.exists()).toBe(true);
-    expect(link.props('to')).toBe('/profile');
-    expect(link.attributes('aria-label')).toBe('پروفایل');
-    expect(link.findComponent(ProfileIcon).exists()).toBe(true);
-  });
-
-  it('renders the profile icon as a 24px currentColor svg', () => {
-    const wrapper = mountPage();
-
-    const icon = wrapper.findComponent(ProfileIcon);
-
-    expect(icon.attributes('fill')).toBe('currentColor');
-    expect(icon.attributes('width')).toBe('24');
-    expect(icon.attributes('height')).toBe('24');
+    expect(header.text()).toContain('روتین کده');
+    expect(header.findAll('button')).toHaveLength(0);
+    expect(header.findAllComponents(RouterLinkStub)).toHaveLength(0);
+    expect(wrapper.find('button[aria-label="خروج از حساب"]').exists()).toBe(false);
+    expect(wrapper.find('[aria-label="پروفایل"]').exists()).toBe(false);
   });
 
   it('uses a dark background for the shell and top bar', () => {
@@ -161,34 +140,6 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
 
     expect(wrapper.get('div').classes()).toContain('bg-slate-900');
     expect(wrapper.get('header').classes()).toContain('bg-slate-900');
-  });
-
-  it('renders the header logout control with the logout icon', () => {
-    const wrapper = mountPage();
-
-    const logoutButton = wrapper.get('button[aria-label="خروج از حساب"]');
-    expect(logoutButton.findComponent(LogoutIcon).exists()).toBe(true);
-  });
-
-  it('logs out and redirects to /login', async () => {
-    const wrapper = mountPage();
-
-    await wrapper.get('button[aria-label="خروج از حساب"]').trigger('click');
-    await flushPromises();
-
-    expect(logoutMock).toHaveBeenCalledTimes(1);
-    expect(pushMock).toHaveBeenCalledWith('/login');
-  });
-
-  it('redirects to /login even when the logout request fails', async () => {
-    logoutMock.mockRejectedValueOnce(new Error('network down'));
-
-    const wrapper = mountPage();
-
-    await wrapper.get('button[aria-label="خروج از حساب"]').trigger('click');
-    await flushPromises();
-
-    expect(pushMock).toHaveBeenCalledWith('/login');
   });
 
   it('renders the shared bottom navigation', () => {

@@ -18,6 +18,7 @@ from app.core.security import (
     verify_password,
 )
 from app.infrastructure.db.models import RefreshToken, User
+from app.schemas.auth import ProfileUpdateRequest
 
 # A valid Argon2id hash of a throwaway value. Verifying against it when no user
 # matches keeps response time similar to a wrong-password attempt, so callers
@@ -68,6 +69,14 @@ class UserNotFoundError(AppError):
     status_code = 404
     code = "USER_NOT_FOUND"
     message = "User not found."
+
+
+class InvalidCurrentPasswordError(AppError):
+    """Raised when a password change presents the wrong current password."""
+
+    status_code = 400
+    code = "INVALID_CURRENT_PASSWORD"
+    message = "Current password is incorrect."
 
 
 class InvalidRefreshTokenError(AppError):
@@ -284,6 +293,72 @@ async def revoke_refresh_token(session: AsyncSession, token: str) -> None:
         return
 
     await _revoke_family(session, row.family_id, datetime.now(UTC))
+
+
+async def update_profile(
+    session: AsyncSession, user: User, payload: ProfileUpdateRequest
+) -> User:
+    """Apply only the profile fields the caller actually sent (F-031)."""
+    fields = payload.model_fields_set
+
+    if "first_name" in fields and payload.first_name is not None:
+        user.first_name = payload.first_name
+    if "last_name" in fields and payload.last_name is not None:
+        user.last_name = payload.last_name
+    if "phone_number" in fields and payload.phone_number is not None:
+        user.phone_number = payload.phone_number
+
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def _revoke_other_sessions(
+    session: AsyncSession, user: User, current_refresh_token: str | None
+) -> None:
+    """Revoke every login family of ``user`` except the caller's own.
+
+    A password change must end sessions an attacker may be holding. The caller's
+    family is identified by the refresh cookie of this very request, so the tab
+    that changed the password is not signed out.
+    """
+    current_family: str | None = None
+    if current_refresh_token:
+        current_family = await session.scalar(
+            select(RefreshToken.family_id).where(
+                RefreshToken.token_hash == hash_refresh_token(current_refresh_token)
+            )
+        )
+
+    others = update(RefreshToken).where(
+        RefreshToken.user_id == user.id,
+        RefreshToken.revoked_at.is_(None),
+    )
+    if current_family is not None:
+        others = others.where(RefreshToken.family_id != current_family)
+
+    await session.execute(
+        others.values(revoked_at=datetime.now(UTC)).execution_options(
+            synchronize_session=False
+        )
+    )
+
+
+async def change_password(
+    session: AsyncSession,
+    user: User,
+    *,
+    current_password: str,
+    new_password: str,
+    current_refresh_token: str | None,
+) -> None:
+    """Replace the password hash after verifying the current password (F-031)."""
+    if not verify_password(current_password, user.password_hash):
+        raise InvalidCurrentPasswordError
+
+    user.password_hash = hash_password(new_password)
+    await _revoke_other_sessions(session, user, current_refresh_token)
+    await session.commit()
 
 
 async def update_timezone(session: AsyncSession, user: User, timezone: str) -> None:

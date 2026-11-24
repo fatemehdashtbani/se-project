@@ -2,4 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #app { height: 100%; }
+/* Dark palette (default) — identical to Tailwind's slate scale. */
+:root {
+  --c-slate-50: 248 250 252;
+  --c-slate-100: 241 245 249;
+  --c-slate-200: 226 232 240;
+  --c-slate-300: 203 213 225;
+  --c-slate-400: 148 163 184;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 71 85 105;
+  --c-slate-700: 51 65 85;
+  --c-slate-800: 30 41 59;
+  --c-slate-900: 15 23 42;
+  --c-slate-950: 2 6 23;
+
+  color-scheme: dark;
+}
+
+/* Light palette — the same roles, inverted. */
+[data-theme='light'] {
+  --c-slate-50: 15 23 42;
+  --c-slate-100: 15 23 42;
+  --c-slate-200: 30 41 59;
+  --c-slate-300: 51 65 85;
+  --c-slate-400: 71 85 105;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 203 213 225;
+  --c-slate-700: 226 232 240;
+  --c-slate-800: 255 255 255;
+  --c-slate-900: 241 245 249;
+  --c-slate-950: 248 250 252;
+
+  color-scheme: light;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  background-color: rgb(var(--c-slate-900));
+  color: rgb(var(--c-slate-100));
+}
+
+/* `text-white` is a foreground colour on dark surfaces but a background-safe
+   colour on the blue buttons, hence the two rules below. */
+[data-theme='light'] .text-white {
+  color: #0f172a;
+}
+
+[data-theme='light'] .bg-blue-600 {
+  color: #ffffff;
+}
+
+[data-theme='light'] .hover\:text-white:hover {
+  color: #0f172a;
+}
+
+[data-theme='light'] .text-blue-200,
+[data-theme='light'] .text-blue-300,
+[data-theme='light'] .text-blue-400 {
+  color: #1d4ed8;
+}
+
+[data-theme='light'] .hover\:text-blue-300:hover {
+  color: #1e40af;
+}
+
+[data-theme='light'] .text-red-200,
+[data-theme='light'] .text-red-300 {
+  color: #b91c1c;
+}
+
+[data-theme='light'] .text-rose-200,
+[data-theme='light'] .text-rose-300 {
+  color: #be123c;
+}
+
+[data-theme='light'] .text-emerald-200 {
+  color: #047857;
+}

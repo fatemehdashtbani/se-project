@@ -3,7 +3,10 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import { useAuthStore } from './stores/auth';
+import { initTheme } from './shared/theme';
 import './assets/styles/main.css';
+
+initTheme();
 
 async function bootstrap(): Promise<void> {
   const app = createApp(App);
