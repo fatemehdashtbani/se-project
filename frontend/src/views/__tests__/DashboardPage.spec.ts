@@ -16,6 +16,7 @@ const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
         role: UserRole;
         timezone: string;
         first_name: string | null;
+        username: string | null;
       } | null,
       isLoading: false,
       login: vi.fn(),
@@ -33,17 +34,20 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+const SIGNED_IN_USER = {
+  id: '6f0f8f2e-8f6a-4d0e-9d3f-2b1c0a9e8d7c',
+  email: 'user@example.com',
+  role: 'user' as UserRole,
+  timezone: 'UTC',
+  first_name: 'سارا',
+  username: 'sara_ahmadi',
+};
+
 describe('DashboardPage (F-023, F-026)', () => {
   beforeEach(() => {
     logoutMock.mockReset();
     pushMock.mockReset();
-    authStore.user = {
-      id: '6f0f8f2e-8f6a-4d0e-9d3f-2b1c0a9e8d7c',
-      email: 'user@example.com',
-      role: 'user',
-      timezone: 'UTC',
-      first_name: 'سارا',
-    };
+    authStore.user = { ...SIGNED_IN_USER };
     authStore.isLoading = false;
   });
 
@@ -60,6 +64,22 @@ describe('DashboardPage (F-023, F-026)', () => {
     expect(wrapper.text()).toContain('داشبورد');
   });
 
+  it('greets the user by first name', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain(
+      'کاربر سارا به روتین کده خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.',
+    );
+  });
+
+  it('falls back to the username, then to «کاربر»', () => {
+    authStore.user = { ...SIGNED_IN_USER, first_name: null };
+    expect(mountPage().text()).toContain('کاربر sara_ahmadi به روتین کده خوش آمدید');
+
+    authStore.user = { ...SIGNED_IN_USER, first_name: null, username: null };
+    expect(mountPage().text()).toContain('کاربر کاربر به روتین کده خوش آمدید');
+  });
+
   it('links to the profile page with the profile icon', () => {
     const wrapper = mountPage();
 
@@ -69,6 +89,16 @@ describe('DashboardPage (F-023, F-026)', () => {
     expect(link.props('to')).toBe('/profile');
     expect(link.attributes('aria-label')).toBe('پروفایل');
     expect(link.findComponent(ProfileIcon).exists()).toBe(true);
+  });
+
+  it('renders the profile icon as a 24px currentColor svg', () => {
+    const wrapper = mountPage();
+
+    const icon = wrapper.findComponent(ProfileIcon);
+
+    expect(icon.attributes('fill')).toBe('currentColor');
+    expect(icon.attributes('width')).toBe('24');
+    expect(icon.attributes('height')).toBe('24');
   });
 
   it('uses a dark background for the shell and top bar', () => {

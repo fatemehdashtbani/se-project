@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import ProfilePage from '../ProfilePage.vue';
+import HomeIcon from '@/components/icons/HomeIcon.vue';
 import { ApiError } from '@/shared/api/client';
 import type { UserRole } from '@/stores/auth';
 
@@ -43,18 +44,19 @@ const USER = {
   phone_number: '09121234567',
 };
 
-const SUCCESS_MESSAGE = 'منطقه زمانی با موفقیت ذخیره شد';
+const TIMEZONE_SUCCESS_MESSAGE = 'منطقه زمانی با موفقیت ذخیره شد';
+const PROFILE_SUCCESS_MESSAGE = 'اطلاعات با موفقیت ذخیره شد';
+const PASSWORD_SUCCESS_MESSAGE = 'رمز عبور با موفقیت تغییر کرد';
 const VALIDATION_MESSAGE = 'اطلاعات وارد شده معتبر نیست';
 
-async function submitForm(wrapper: ReturnType<typeof mount>): Promise<void> {
-  await wrapper.get('form').trigger('submit');
-  await flushPromises();
+function mountPage() {
+  return mount(ProfilePage, {
+    global: { stubs: { RouterLink: RouterLinkStub } },
+  });
 }
 
-function passwordButton(wrapper: ReturnType<typeof mount>) {
-  return wrapper
-    .findAll('button')
-    .find((button) => button.text().includes('تغییر رمز عبور'));
+function passwordToggle(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findAll('button').find((button) => button.text() === 'تغییر رمز عبور');
 }
 
 describe('ProfilePage (F-004, F-026)', () => {
@@ -64,41 +66,105 @@ describe('ProfilePage (F-004, F-026)', () => {
     authStore.isLoading = false;
   });
 
-  it('renders the read-only profile fields', () => {
-    const wrapper = mount(ProfilePage);
+  it('links back to the dashboard from the top-left home icon', () => {
+    const wrapper = mountPage();
 
-    expect(wrapper.text()).toContain(USER.first_name);
-    expect(wrapper.text()).toContain(USER.last_name);
-    expect(wrapper.text()).toContain(USER.phone_number);
+    const link = wrapper.findComponent(RouterLinkStub);
+
+    expect(link.exists()).toBe(true);
+    expect(link.props('to')).toBe('/dashboard');
+    expect(link.attributes('aria-label')).toBe('بازگشت به داشبورد');
+    expect(link.findComponent(HomeIcon).exists()).toBe(true);
+  });
+
+  it('renders the profile fields as editable inputs pre-filled from the user', () => {
+    const wrapper = mountPage();
+
+    const firstName = wrapper.get('#profile-first-name').element as HTMLInputElement;
+    const lastName = wrapper.get('#profile-last-name').element as HTMLInputElement;
+    const phone = wrapper.get('#profile-phone').element as HTMLInputElement;
+
+    expect(firstName.value).toBe(USER.first_name);
+    expect(lastName.value).toBe(USER.last_name);
+    expect(phone.value).toBe(USER.phone_number);
+  });
+
+  it('keeps the email visible and read-only', () => {
+    const wrapper = mountPage();
+
     expect(wrapper.text()).toContain(USER.email);
+    expect(wrapper.find('input#profile-email').exists()).toBe(false);
   });
 
-  it('renders a placeholder for a profile field the account has not filled', () => {
-    authStore.user = { ...USER, first_name: null };
+  it('leaves the inputs empty when the account has no stored profile', () => {
+    authStore.user = { ...USER, first_name: null, last_name: null, phone_number: null };
 
-    const wrapper = mount(ProfilePage);
+    const wrapper = mountPage();
 
-    expect(wrapper.text()).toContain('—');
+    const firstName = wrapper.get('#profile-first-name').element as HTMLInputElement;
+    expect(firstName.value).toBe('');
   });
 
-  it('offers a disabled change-password placeholder', () => {
-    const wrapper = mount(ProfilePage);
+  it('saves the profile locally with a Persian success message and no API call', async () => {
+    const wrapper = mountPage();
 
-    const button = passwordButton(wrapper);
+    await wrapper.get('#profile-first-name').setValue('نگار');
+    await wrapper.get('#profile-form').trigger('submit');
+    await flushPromises();
 
-    expect(button).toBeDefined();
-    expect(button?.attributes('disabled')).toBeDefined();
+    expect(wrapper.get('[role="status"]').text()).toBe(PROFILE_SUCCESS_MESSAGE);
+    expect(updateTimezoneMock).not.toHaveBeenCalled();
+  });
+
+  it('offers an active change-password button', () => {
+    const wrapper = mountPage();
+
+    const toggle = passwordToggle(wrapper);
+
+    expect(toggle).toBeDefined();
+    expect(toggle?.attributes('disabled')).toBeUndefined();
+  });
+
+  it('toggles the mock password form with its three inputs', async () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.find('#password-form').exists()).toBe(false);
+
+    await passwordToggle(wrapper)?.trigger('click');
+
+    expect(wrapper.find('#password-form').exists()).toBe(true);
+    expect(wrapper.find('#current-password').exists()).toBe(true);
+    expect(wrapper.find('#new-password').exists()).toBe(true);
+    expect(wrapper.find('#confirm-new-password').exists()).toBe(true);
+
+    await passwordToggle(wrapper)?.trigger('click');
+    expect(wrapper.find('#password-form').exists()).toBe(false);
+  });
+
+  it('shows a Persian success message and closes the form after a mock password change', async () => {
+    const wrapper = mountPage();
+
+    await passwordToggle(wrapper)?.trigger('click');
+    await wrapper.get('#current-password').setValue('secret123');
+    await wrapper.get('#new-password').setValue('new-secret123');
+    await wrapper.get('#confirm-new-password').setValue('new-secret123');
+    await wrapper.get('#password-form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.get('[role="status"]').text()).toBe(PASSWORD_SUCCESS_MESSAGE);
+    expect(wrapper.find('#password-form').exists()).toBe(false);
   });
 
   it('uses the dark theme for the page and inputs', () => {
-    const wrapper = mount(ProfilePage);
+    const wrapper = mountPage();
 
     expect(wrapper.get('div').classes()).toContain('bg-slate-900');
     expect(wrapper.get('select').classes()).toContain('bg-slate-800');
+    expect(wrapper.get('#profile-first-name').classes()).toContain('bg-slate-800');
   });
 
   it('pre-selects the current timezone in the dropdown', () => {
-    const wrapper = mount(ProfilePage);
+    const wrapper = mountPage();
 
     const select = wrapper.get('select').element as HTMLSelectElement;
 
@@ -106,21 +172,23 @@ describe('ProfilePage (F-004, F-026)', () => {
   });
 
   it('saves the selected timezone through the store', async () => {
-    const wrapper = mount(ProfilePage);
+    const wrapper = mountPage();
 
     await wrapper.get('select').setValue('Europe/London');
-    await submitForm(wrapper);
+    await wrapper.get('#timezone-form').trigger('submit');
+    await flushPromises();
 
     expect(updateTimezoneMock).toHaveBeenCalledWith('Europe/London');
   });
 
-  it('shows a Persian success message after saving', async () => {
+  it('shows a Persian success message after saving the timezone', async () => {
     updateTimezoneMock.mockResolvedValueOnce(undefined);
 
-    const wrapper = mount(ProfilePage);
-    await submitForm(wrapper);
+    const wrapper = mountPage();
+    await wrapper.get('#timezone-form').trigger('submit');
+    await flushPromises();
 
-    expect(wrapper.text()).toContain(SUCCESS_MESSAGE);
+    expect(wrapper.text()).toContain(TIMEZONE_SUCCESS_MESSAGE);
   });
 
   it('shows a Persian error message when the backend rejects the zone', async () => {
@@ -128,17 +196,18 @@ describe('ProfilePage (F-004, F-026)', () => {
       new ApiError(422, 'VALIDATION_ERROR', 'Invalid IANA timezone'),
     );
 
-    const wrapper = mount(ProfilePage);
-    await submitForm(wrapper);
+    const wrapper = mountPage();
+    await wrapper.get('#timezone-form').trigger('submit');
+    await flushPromises();
 
     expect(wrapper.text()).toContain(VALIDATION_MESSAGE);
-    expect(wrapper.text()).not.toContain(SUCCESS_MESSAGE);
+    expect(wrapper.text()).not.toContain(TIMEZONE_SUCCESS_MESSAGE);
   });
 
   it('keeps a stored timezone that is missing from the curated list selectable', () => {
     authStore.user = { ...USER, timezone: 'Antarctica/Troll' };
 
-    const wrapper = mount(ProfilePage);
+    const wrapper = mountPage();
 
     const select = wrapper.get('select').element as HTMLSelectElement;
     const values = Array.from(select.options).map((option) => option.value);

@@ -31,7 +31,7 @@ test('register, update the timezone, and log out', async ({ page }) => {
 
   // 9-10: changing the zone reports success.
   await page.locator('#timezone').selectOption('Asia/Tehran');
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#timezone-form button[type="submit"]').click();
   await expect(page.getByRole('status')).toHaveText(SUCCESS_MESSAGE);
 
   // The value must survive a full reload, i.e. it was persisted server-side

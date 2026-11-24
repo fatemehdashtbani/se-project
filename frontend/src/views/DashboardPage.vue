@@ -27,7 +27,8 @@
     <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 class="text-2xl font-bold text-white">داشبورد</h1>
       <p class="mt-2 text-sm text-slate-400">
-        به روتین کده خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.
+        کاربر {{ authStore.user?.first_name || authStore.user?.username || 'کاربر' }} به روتین کده
+        خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.
       </p>
     </main>
   </div>
