@@ -22,8 +22,20 @@
           <p class="mt-2 text-sm text-slate-400">همیار روزانه‌ی عادت‌ها و روتین‌ها</p>
         </header>
 
+        <div v-if="title" class="mb-6 text-center">
+          <h1 class="text-2xl font-bold text-white">{{ title }}</h1>
+          <p v-if="subtitle" class="mt-2 text-sm text-slate-400">{{ subtitle }}</p>
+        </div>
+
         <slot />
       </div>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  title?: string;
+  subtitle?: string;
+}>();
+</script>

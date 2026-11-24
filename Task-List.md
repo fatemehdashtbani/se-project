@@ -65,6 +65,7 @@ For every new feature:
 | F-028 | Profile & dashboard polish (icon, greeting, editable profile, mock password change, back button) | P2 | Done | F-019, F-026 | `docs/features/F-028-profile-dashboard-polish/SPEC.md` | `docs/features/F-028-profile-dashboard-polish/PLAN.md` |
 | F-029 | Fixed bottom navigation across authenticated pages and dedicated logout icon | P2 | Done | F-023, F-026 | `docs/features/F-029-bottom-navigation/SPEC.md` | `docs/features/F-029-bottom-navigation/PLAN.md` |
 | F-005 | Routine CRUD - model, endpoints, ownership, store and dashboard UI | P1 | Done | F-019, F-003 | `docs/features/F-005-routine-crud/SPEC.md` | `docs/features/F-005-routine-crud/PLAN.md` |
+| F-030 | Admin panel UI shell — role-gated RTL sidebar layout, 403 page, role-aware auth redirects (reference-based) | P1 | Done | F-003, F-023, F-029 | `docs/features/F-030-admin-panel-shell/SPEC.md` | `docs/features/F-030-admin-panel-shell/PLAN.md` |
 
 ## Current sprint
 
@@ -89,5 +90,6 @@ No sprint has been committed yet. Select work only from tasks whose status is `R
 | 2026-11-24 | F-028 backfilled as Done: SPEC/PLAN recorded for the profile/dashboard polish (profile icon, dynamic greeting, editable profile, mock password change, dashboard back button). |
 | 2026-11-24 | F-005 completed with `useRoutineStore` (fetch/create/delete through `/api/v1/routines`) and the dashboard routine list with Persian empty state, inline create form, and delete controls; frontend store/component tests added. |
 | 2026-11-24 | F-029 closed as Done: shared fixed `BottomNav` on the dashboard and profile routes, dedicated `LogoutIcon`, and logout redirect tests. |
+| 2026-11-24 | F-030 closed as Done: admin UI shell adapted from the reference project — role-gated `/admin` routes, RTL dark `AdminLayout`/`AdminSidebar`, placeholder admin pages, Persian 403 page, `panelPath` role-aware redirects on the existing Persian login/register pages. Backend admin management (F-014) remains out of scope. |
 | 2026-11-19 | F-001 marked Done (scaffold, lint, type-check, and tests pass). F-002 login UI SPEC/PLAN approved and marked Ready. F-018 added to track remaining frontend dependency upgrades required to clear `npm audit` critical/high findings. |
 | 2026-11-18 | Initial backlog and feature-intake workflow created (v2.0 — F-### IDs). |

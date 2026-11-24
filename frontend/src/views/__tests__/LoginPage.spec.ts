@@ -236,6 +236,13 @@ describe('LoginPage (F-002, F-026)', () => {
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined();
   });
 
+  it('renders the reference-style Persian heading', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('ورود به حساب');
+    expect(wrapper.text()).toContain('برای مدیریت روتینهای خود وارد شوید');
+  });
+
   it('redirects to the dashboard after a successful login', async () => {
     const wrapper = mountPage();
 
@@ -244,5 +251,21 @@ describe('LoginPage (F-002, F-026)', () => {
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('redirects an admin to the admin panel after a successful login', async () => {
+    authStore.user = {
+      id: 'admin-id',
+      email: VALID_EMAIL,
+      role: 'admin',
+      timezone: 'UTC',
+    };
+    const wrapper = mountPage();
+
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(pushMock).toHaveBeenCalledWith('/admin');
   });
 });

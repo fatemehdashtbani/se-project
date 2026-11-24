@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout>
+  <AuthLayout title="ورود به حساب" subtitle="برای مدیریت روتینهای خود وارد شوید">
     <p
       v-if="serverError"
       role="alert"
@@ -124,6 +124,7 @@ import { useRouter } from 'vue-router';
 import AuthLayout from '@/components/AuthLayout.vue';
 import { ApiError } from '@/shared/api/client';
 import { getPersianError } from '@/shared/utils/errors';
+import { panelPath } from '@/shared/utils/paths';
 import {
   normalizePhone,
   validateEmail,
@@ -191,7 +192,7 @@ async function handleSubmit(): Promise<void> {
 
   try {
     await authStore.login(identifierValue, password.value);
-    await router.push('/dashboard');
+    await router.push(panelPath(authStore.user?.role));
   } catch (error) {
     serverError.value = getPersianError(
       error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',

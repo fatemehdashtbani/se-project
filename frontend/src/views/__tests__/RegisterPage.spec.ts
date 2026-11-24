@@ -174,6 +174,13 @@ describe('RegisterPage (F-025)', () => {
     expect(pushMock).toHaveBeenCalledWith('/dashboard');
   });
 
+  it('renders the reference-style Persian heading', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('ایجاد حساب کاربری جدید');
+    expect(wrapper.text()).toContain('با چند گام ساده روتین خود را آغاز کنید');
+  });
+
   it('links to the login page', () => {
     const wrapper = mountPage();
 
@@ -181,5 +188,22 @@ describe('RegisterPage (F-025)', () => {
 
     expect(link.exists()).toBe(true);
     expect(link.props('to')).toBe('/login');
+  });
+
+  it('uses the role-aware landing page after registration', async () => {
+    // The backend owns role assignment; this only proves the redirect helper
+    // is used instead of a hard-coded /dashboard push.
+    authStore.user = {
+      id: 'admin-id',
+      email: VALID.email,
+      role: 'admin',
+      timezone: 'UTC',
+    };
+    const wrapper = mountPage();
+
+    await fillForm(wrapper);
+    await submit(wrapper);
+
+    expect(pushMock).toHaveBeenCalledWith('/admin');
   });
 });
