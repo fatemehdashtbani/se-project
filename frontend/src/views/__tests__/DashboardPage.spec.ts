@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import DashboardPage from '../DashboardPage.vue';
+import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import type { UserRole } from '@/stores/auth';
 
 const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
@@ -14,6 +15,7 @@ const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
         email: string;
         role: UserRole;
         timezone: string;
+        first_name: string | null;
       } | null,
       isLoading: false,
       login: vi.fn(),
@@ -31,10 +33,18 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
-describe('DashboardPage (F-023)', () => {
+describe('DashboardPage (F-023, F-026)', () => {
   beforeEach(() => {
     logoutMock.mockReset();
     pushMock.mockReset();
+    authStore.user = {
+      id: '6f0f8f2e-8f6a-4d0e-9d3f-2b1c0a9e8d7c',
+      email: 'user@example.com',
+      role: 'user',
+      timezone: 'UTC',
+      first_name: 'سارا',
+    };
+    authStore.isLoading = false;
   });
 
   function mountPage() {
@@ -43,20 +53,35 @@ describe('DashboardPage (F-023)', () => {
     });
   }
 
-  it('renders the dashboard heading', () => {
+  it('renders the app name and the dashboard heading', () => {
     const wrapper = mountPage();
 
-    expect(wrapper.text()).toContain('Dashboard');
+    expect(wrapper.text()).toContain('روتین کده');
+    expect(wrapper.text()).toContain('داشبورد');
   });
 
-  it('links to the profile page', () => {
+  it('links to the profile page with the profile icon', () => {
     const wrapper = mountPage();
 
     const link = wrapper.findComponent(RouterLinkStub);
 
     expect(link.exists()).toBe(true);
     expect(link.props('to')).toBe('/profile');
-    expect(link.text()).toBe('پروفایل');
+    expect(link.attributes('aria-label')).toBe('پروفایل');
+    expect(link.findComponent(ProfileIcon).exists()).toBe(true);
+  });
+
+  it('uses a dark background for the shell and top bar', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.get('div').classes()).toContain('bg-slate-900');
+    expect(wrapper.get('header').classes()).toContain('bg-slate-900');
+  });
+
+  it('renders the logout control with Persian text', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.get('button[type="button"]').text()).toBe('خروج از حساب');
   });
 
   it('logs out and redirects to /login', async () => {

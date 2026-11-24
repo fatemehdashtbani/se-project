@@ -14,6 +14,10 @@ const { authStore, updateTimezoneMock } = vi.hoisted(() => {
         email: string;
         role: UserRole;
         timezone: string;
+        username: string | null;
+        first_name: string | null;
+        last_name: string | null;
+        phone_number: string | null;
       } | null,
       isLoading: false,
       login: vi.fn(),
@@ -33,6 +37,10 @@ const USER = {
   email: 'user@example.com',
   role: 'user' as UserRole,
   timezone: 'Asia/Tehran',
+  username: 'sara_ahmadi',
+  first_name: 'سارا',
+  last_name: 'احمدی',
+  phone_number: '09121234567',
 };
 
 const SUCCESS_MESSAGE = 'منطقه زمانی با موفقیت ذخیره شد';
@@ -43,17 +51,50 @@ async function submitForm(wrapper: ReturnType<typeof mount>): Promise<void> {
   await flushPromises();
 }
 
-describe('ProfilePage (F-004)', () => {
+function passwordButton(wrapper: ReturnType<typeof mount>) {
+  return wrapper
+    .findAll('button')
+    .find((button) => button.text().includes('تغییر رمز عبور'));
+}
+
+describe('ProfilePage (F-004, F-026)', () => {
   beforeEach(() => {
     updateTimezoneMock.mockReset();
     authStore.user = { ...USER };
     authStore.isLoading = false;
   });
 
-  it('renders the current email', () => {
+  it('renders the read-only profile fields', () => {
     const wrapper = mount(ProfilePage);
 
+    expect(wrapper.text()).toContain(USER.first_name);
+    expect(wrapper.text()).toContain(USER.last_name);
+    expect(wrapper.text()).toContain(USER.phone_number);
     expect(wrapper.text()).toContain(USER.email);
+  });
+
+  it('renders a placeholder for a profile field the account has not filled', () => {
+    authStore.user = { ...USER, first_name: null };
+
+    const wrapper = mount(ProfilePage);
+
+    expect(wrapper.text()).toContain('—');
+  });
+
+  it('offers a disabled change-password placeholder', () => {
+    const wrapper = mount(ProfilePage);
+
+    const button = passwordButton(wrapper);
+
+    expect(button).toBeDefined();
+    expect(button?.attributes('disabled')).toBeDefined();
+  });
+
+  it('uses the dark theme for the page and inputs', () => {
+    const wrapper = mount(ProfilePage);
+
+    expect(wrapper.get('div').classes()).toContain('bg-slate-900');
+    expect(wrapper.get('select').classes()).toContain('bg-slate-800');
   });
 
   it('pre-selects the current timezone in the dropdown', () => {

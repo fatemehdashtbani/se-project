@@ -74,12 +74,28 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     """Payload accepted by ``POST /api/v1/auth/login``.
 
-    The password is only required to be present: rejecting short passwords here
-    would leak the registration policy and turn a mistyped password into a 422.
+    ``identifier`` is either an email address or a phone number, so the same
+    form can serve both login modes. The password is only required to be
+    present: rejecting short passwords here would leak the registration policy
+    and turn a mistyped password into a 422.
     """
 
-    email: str = Field(max_length=320)
+    identifier: str = Field(min_length=1, max_length=320)
     password: str = Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)
+
+    @field_validator("identifier")
+    @classmethod
+    def strip_identifier(cls, value: str) -> str:
+        identifier = value.strip()
+        if not identifier:
+            raise ValueError("identifier must not be blank")
+        return identifier
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Payload accepted by ``POST /api/v1/auth/forgot-password``."""
+
+    email: str = Field(max_length=320)
 
     @field_validator("email")
     @classmethod

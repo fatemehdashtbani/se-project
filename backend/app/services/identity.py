@@ -1,9 +1,10 @@
 """Identity application services: registration, authentication, and token issuing."""
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +23,19 @@ from app.infrastructure.db.models import RefreshToken, User
 # matches keeps response time similar to a wrong-password attempt, so callers
 # cannot infer whether an email exists.
 _DUMMY_PASSWORD_HASH = hash_password("timing-equalizer-not-a-real-account")
+
+
+def normalize_login_identifier(value: str) -> str:
+    """Normalize an email or phone number the way registration stores it.
+
+    Emails are lowercased; phone numbers lose the spaces and dashes people
+    type. Registration applies the same rules, so what is stored is what is
+    compared here.
+    """
+    identifier = value.strip()
+    if "@" in identifier:
+        return identifier.lower()
+    return re.sub(r"[\s-]", "", identifier)
 
 
 class EmailAlreadyExistsError(AppError):
@@ -132,10 +146,29 @@ async def promote_to_admin(session: AsyncSession, *, email: str) -> bool:
 
 
 async def authenticate_user(
-    session: AsyncSession, *, email: str, password: str
+    session: AsyncSession, *, identifier: str, password: str
 ) -> User | None:
-    """Return the matching user, or None for an unknown email or wrong password."""
-    user = await session.scalar(select(User).where(User.email == email))
+    """Return the account matching an email or phone identifier, or None.
+
+    The identifier is normalized the same way registration stores it, so a
+    phone typed with spaces still matches and emails stay case-insensitive.
+
+    Only an unambiguous match is accepted. ``phone_number`` is not unique in
+    the database, so a number shared by two accounts must not silently sign one
+    of them in; those users can still log in with their email.
+    """
+    normalized = normalize_login_identifier(identifier)
+    users = list(
+        (
+            await session.scalars(
+                select(User).where(
+                    or_(User.email == normalized, User.phone_number == normalized)
+                )
+            )
+        ).all()
+    )
+
+    user = users[0] if len(users) == 1 else None
     password_hash = user.password_hash if user is not None else _DUMMY_PASSWORD_HASH
 
     if not verify_password(password, password_hash):

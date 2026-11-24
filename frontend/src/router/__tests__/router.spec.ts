@@ -43,4 +43,10 @@ describe('router guard (F-023)', () => {
 
     expect(router.currentRoute.value.name).toBe('register');
   });
+
+  it('exposes the public /forgot-password route', async () => {
+    await router.push('/forgot-password');
+
+    expect(router.currentRoute.value.name).toBe('forgot-password');
+  });
 });

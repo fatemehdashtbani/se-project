@@ -9,49 +9,52 @@
     </p>
 
     <form class="space-y-5" novalidate @submit.prevent="handleSubmit">
-      <!-- The mobile tab is presented but not wired: the API only logs in by email. -->
       <div
         class="grid grid-cols-2 gap-1 rounded-xl border border-slate-800 bg-slate-800/60 p-1"
         role="tablist"
         aria-label="روش ورود"
       >
         <button
+          v-for="option in LOGIN_MODES"
+          :key="option.value"
           type="button"
           role="tab"
-          :aria-selected="mode === 'email'"
-          class="rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white shadow-sm"
+          :aria-selected="mode === option.value"
+          :class="[
+            'rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50',
+            mode === option.value
+              ? 'bg-slate-700 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200',
+          ]"
+          @click="selectMode(option.value)"
         >
-          ایمیل
-        </button>
-        <button
-          type="button"
-          role="tab"
-          disabled
-          aria-disabled="true"
-          title="به‌زودی"
-          class="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-medium text-slate-500"
-        >
-          موبایل
-          <span class="ms-1 text-[10px] text-slate-500">به‌زودی</span>
+          {{ option.label }}
         </button>
       </div>
 
       <div>
-        <label for="email" class="mb-2 block text-sm text-slate-300">ایمیل</label>
+        <label for="identifier" class="mb-2 block text-sm text-slate-300">
+          {{ identifierLabel }}
+        </label>
         <input
-          id="email"
-          v-model="email"
-          type="email"
-          name="email"
-          autocomplete="email"
-          placeholder="you@example.com"
+          id="identifier"
+          v-model="identifier"
+          :type="mode === 'email' ? 'email' : 'tel'"
+          name="identifier"
+          :autocomplete="mode === 'email' ? 'email' : 'tel'"
+          :placeholder="mode === 'email' ? 'you@example.com' : '09121234567'"
           dir="ltr"
           class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-left text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          :aria-invalid="errors.email ? 'true' : 'false'"
-          :aria-describedby="errors.email ? 'email-error' : undefined"
+          :aria-invalid="errors.identifier ? 'true' : 'false'"
+          :aria-describedby="errors.identifier ? 'identifier-error' : undefined"
         />
-        <p v-if="errors.email" id="email-error" role="alert" class="mt-2 text-sm text-rose-300">
-          {{ errors.email }}
+        <p
+          v-if="errors.identifier"
+          id="identifier-error"
+          role="alert"
+          class="mt-2 text-sm text-rose-300"
+        >
+          {{ errors.identifier }}
         </p>
       </div>
 
@@ -89,9 +92,12 @@
           مرا به خاطر بسپار
         </label>
 
-        <a href="#" class="text-sm text-blue-400 transition-colors hover:text-blue-300">
+        <RouterLink
+          to="/forgot-password"
+          class="text-sm text-blue-400 transition-colors hover:text-blue-300"
+        >
           فراموشی رمز عبور؟
-        </a>
+        </RouterLink>
       </div>
 
       <button
@@ -113,31 +119,65 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AuthLayout from '@/components/AuthLayout.vue';
 import { ApiError } from '@/shared/api/client';
 import { getPersianError } from '@/shared/utils/errors';
-import { validateEmail, validatePassword } from '@/shared/utils/validation';
+import {
+  normalizePhone,
+  validateEmail,
+  validatePassword,
+  validatePhone,
+} from '@/shared/utils/validation';
 import { useAuthStore } from '@/stores/auth';
+
+type LoginMode = 'email' | 'mobile';
+
+const LOGIN_MODES: ReadonlyArray<{ value: LoginMode; label: string }> = [
+  { value: 'email', label: 'ایمیل' },
+  { value: 'mobile', label: 'موبایل' },
+];
 
 const authStore = useAuthStore();
 const router = useRouter();
 
-const mode = ref<'email' | 'mobile'>('email');
-const email = ref('');
+const mode = ref<LoginMode>('email');
+const identifier = ref('');
 const password = ref('');
 const rememberMe = ref(false);
-const errors = reactive({ email: '', password: '' });
+const errors = reactive({ identifier: '', password: '' });
 const serverError = ref('');
 
-const emit = defineEmits<{ submit: [payload: { email: string; password: string }] }>();
+const identifierLabel = computed(() => (mode.value === 'email' ? 'ایمیل' : 'شماره تلفن'));
+
+const emit = defineEmits<{
+  submit: [payload: { identifier: string; password: string }];
+}>();
+
+function selectMode(next: LoginMode): void {
+  if (next === mode.value) {
+    return;
+  }
+
+  mode.value = next;
+  // The two modes hold different kinds of value, so carrying (or validating)
+  // the old text under the new label would be misleading.
+  identifier.value = '';
+  errors.identifier = '';
+}
 
 function validate(): boolean {
-  errors.email = validateEmail(email.value) ?? '';
+  errors.identifier =
+    (mode.value === 'email' ? validateEmail(identifier.value) : validatePhone(identifier.value)) ??
+    '';
   errors.password = validatePassword(password.value) ?? '';
 
-  return errors.email === '' && errors.password === '';
+  return errors.identifier === '' && errors.password === '';
+}
+
+function normalizedIdentifier(): string {
+  return mode.value === 'email' ? identifier.value.trim() : normalizePhone(identifier.value);
 }
 
 async function handleSubmit(): Promise<void> {
@@ -145,11 +185,12 @@ async function handleSubmit(): Promise<void> {
     return;
   }
 
+  const identifierValue = normalizedIdentifier();
   serverError.value = '';
-  emit('submit', { email: email.value, password: password.value });
+  emit('submit', { identifier: identifierValue, password: password.value });
 
   try {
-    await authStore.login(email.value, password.value);
+    await authStore.login(identifierValue, password.value);
     await router.push('/dashboard');
   } catch (error) {
     serverError.value = getPersianError(

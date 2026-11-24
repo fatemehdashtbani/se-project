@@ -55,13 +55,37 @@ describe('useAuthStore (F-023)', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
       '/api/v1/auth/login',
-      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ identifier: USER.email, password: 'secret123' }),
+      }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       '/api/v1/auth/me',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),
     );
+  });
+
+  it('login() accepts a phone number as the identifier', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, { message: 'Logged in successfully' }))
+      .mockResolvedValueOnce(jsonResponse(200, USER));
+
+    const store = useAuthStore();
+    await store.login(USER.phone_number ?? '', 'secret123');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ identifier: USER.phone_number, password: 'secret123' }),
+      }),
+    );
+    expect(store.user).toEqual(USER);
   });
 
   it('login() rejects on 401 and keeps the user signed out', async () => {
@@ -212,7 +236,7 @@ describe('useAuthStore (F-023)', () => {
         method: 'POST',
         credentials: 'include',
         body: JSON.stringify({
-          email: REGISTRATION.email,
+          identifier: REGISTRATION.email,
           password: REGISTRATION.password,
         }),
       }),
@@ -241,5 +265,36 @@ describe('useAuthStore (F-023)', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(store.user).toBeNull();
+  });
+
+  it('forgotPassword() posts the email to the mock endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { message: 'Reset link sent' }));
+
+    const store = useAuthStore();
+    await store.forgotPassword('user@example.com');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/forgot-password',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ email: 'user@example.com' }),
+      }),
+    );
+  });
+
+  it('forgotPassword() propagates a rejected request', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(422, {
+        error: { code: 'VALIDATION_ERROR', message: 'Request validation failed.' },
+      }),
+    );
+
+    const store = useAuthStore();
+
+    await expect(store.forgotPassword('notanemail')).rejects.toMatchObject({
+      status: 422,
+      code: 'VALIDATION_ERROR',
+    });
   });
 });

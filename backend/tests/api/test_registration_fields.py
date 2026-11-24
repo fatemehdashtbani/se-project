@@ -49,7 +49,7 @@ async def test_registration_stores_and_returns_the_profile(
     assert "password_hash" not in body
 
     login = await client.post(
-        LOGIN_URL, json={"email": "sara@example.com", "password": PASSWORD}
+        LOGIN_URL, json={"identifier": "sara@example.com", "password": PASSWORD}
     )
     assert login.status_code == 200
 

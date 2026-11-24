@@ -43,7 +43,7 @@ test('register, update the timezone, and log out', async ({ page }) => {
   // 11-12: back to the dashboard, then log out.
   await page.goBack();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await page.getByRole('button', { name: 'خروج' }).click();
+  await page.getByRole('button', { name: 'خروج از حساب' }).click();
   await expect(page).toHaveURL(/\/login$/);
 
   // The session is really gone: the guard bounces /dashboard.

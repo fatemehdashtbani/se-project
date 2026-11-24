@@ -35,7 +35,9 @@ async def _register_user(
 
 
 async def _login(client: AsyncClient, email: str, password: str = PASSWORD) -> Response:
-    return await client.post(LOGIN_URL, json={"email": email, "password": password})
+    return await client.post(
+        LOGIN_URL, json={"identifier": email, "password": password}
+    )
 
 
 def _set_cookie_headers(response: Response) -> dict[str, str]:
@@ -147,7 +149,9 @@ async def test_login_returns_http_only_cookies_and_records_refresh_token(
     email = "login.user@example.com"
     assert (await _register_user(client, email)).status_code == 201
 
-    response = await client.post(LOGIN_URL, json={"email": email, "password": PASSWORD})
+    response = await client.post(
+        LOGIN_URL, json={"identifier": email, "password": PASSWORD}
+    )
 
     assert response.status_code == 200
 
@@ -191,7 +195,7 @@ async def test_login_rejects_wrong_password(client: AsyncClient) -> None:
 
     response = await client.post(
         LOGIN_URL,
-        json={"email": email, "password": "different-secret"},
+        json={"identifier": email, "password": "different-secret"},
     )
 
     assert response.status_code == 401
@@ -203,7 +207,74 @@ async def test_login_rejects_unknown_email_without_disclosing_it(
 ) -> None:
     response = await client.post(
         LOGIN_URL,
-        json={"email": "nobody@example.com", "password": PASSWORD},
+        json={"identifier": "nobody@example.com", "password": PASSWORD},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+async def test_login_accepts_the_phone_number_as_identifier(
+    client: AsyncClient,
+) -> None:
+    email = "phone.login@example.com"
+    payload = registration_payload(email, phone_number="09121234567")
+    assert (await client.post(REGISTER_URL, json=payload)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL, json={"identifier": "09121234567", "password": PASSWORD}
+    )
+
+    assert response.status_code == 200
+    me = await client.get(ME_URL)
+    assert me.status_code == 200
+    assert me.json()["email"] == email
+
+
+async def test_login_normalizes_a_typed_phone_number(client: AsyncClient) -> None:
+    """Registration stores ``09123456789``, so spaced login input must match it."""
+    email = "phone.spaces@example.com"
+    payload = registration_payload(email, phone_number="09123456789")
+    assert (await client.post(REGISTER_URL, json=payload)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL, json={"identifier": "0912 345 6789", "password": PASSWORD}
+    )
+
+    assert response.status_code == 200
+
+
+async def test_login_matches_the_email_case_insensitively(
+    client: AsyncClient,
+) -> None:
+    email = "case.login@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL, json={"identifier": "CASE.Login@Example.COM", "password": PASSWORD}
+    )
+
+    assert response.status_code == 200
+
+
+async def test_login_requires_an_identifier(client: AsyncClient) -> None:
+    response = await client.post(LOGIN_URL, json={"password": PASSWORD})
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_login_rejects_a_phone_number_shared_by_two_accounts(
+    client: AsyncClient,
+) -> None:
+    """A mobile identifier is only safe when it resolves to exactly one account."""
+    first = registration_payload("shared.one@example.com", phone_number="09120001111")
+    second = registration_payload("shared.two@example.com", phone_number="09120001111")
+    assert (await client.post(REGISTER_URL, json=first)).status_code == 201
+    assert (await client.post(REGISTER_URL, json=second)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL, json={"identifier": "09120001111", "password": PASSWORD}
     )
 
     assert response.status_code == 401

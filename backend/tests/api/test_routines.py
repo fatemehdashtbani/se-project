@@ -26,7 +26,9 @@ async def _register(client: AsyncClient, email: str) -> None:
 
 
 async def _login(client: AsyncClient, email: str) -> None:
-    response = await client.post(LOGIN_URL, json={"email": email, "password": PASSWORD})
+    response = await client.post(
+        LOGIN_URL, json={"identifier": email, "password": PASSWORD}
+    )
     assert response.status_code == 200, response.text
 
 

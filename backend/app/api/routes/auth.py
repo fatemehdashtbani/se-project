@@ -12,6 +12,7 @@ from app.core.errors import AppError
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_session
 from app.schemas.auth import (
+    ForgotPasswordRequest,
     LoginRequest,
     MeResponse,
     RegisterRequest,
@@ -89,13 +90,24 @@ async def register(payload: RegisterRequest, session: SessionDep) -> UserRespons
 async def login(payload: LoginRequest, session: SessionDep) -> JSONResponse:
     """Authenticate the user and return HttpOnly session cookies."""
     user = await authenticate_user(
-        session, email=payload.email, password=payload.password
+        session, identifier=payload.identifier, password=payload.password
     )
     if user is None:
         raise InvalidCredentialsError
 
     access_token, refresh_token = await issue_tokens(session, user)
     return _token_response("Logged in successfully", access_token, refresh_token)
+
+
+@router.post("/forgot-password")
+async def forgot_password(payload: ForgotPasswordRequest) -> dict[str, str]:
+    """Accept a password-reset request (mock; F-022 will send the email).
+
+    The response is identical for every valid address, so this endpoint cannot
+    be used to discover which emails are registered. ``payload`` is validated
+    only to reject malformed input before the future mailer sees it.
+    """
+    return {"message": "Reset link sent"}
 
 
 @router.post("/refresh")

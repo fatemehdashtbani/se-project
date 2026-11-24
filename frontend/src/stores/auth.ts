@@ -31,14 +31,14 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    /** Authenticate with email/password, then load the canonical profile. */
-    async login(email: string, password: string): Promise<void> {
+    /** Authenticate with an email or phone identifier plus the password. */
+    async login(identifier: string, password: string): Promise<void> {
       this.isLoading = true;
 
       try {
         await apiRequest<{ message: string }>('/api/v1/auth/login', {
           method: 'POST',
-          body: { email, password },
+          body: { identifier, password },
         });
 
         // Login only returns a message; the session cookie is the real state.
@@ -101,6 +101,14 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false;
       }
+    },
+
+    /** Request a password-reset link (backend mock until F-022). */
+    async forgotPassword(email: string): Promise<void> {
+      await apiRequest<{ message: string }>('/api/v1/auth/forgot-password', {
+        method: 'POST',
+        body: { email },
+      });
     },
 
     /** Hydrate the store from the HttpOnly session cookie on app boot. */

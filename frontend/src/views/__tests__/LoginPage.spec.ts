@@ -33,12 +33,17 @@ vi.mock('vue-router', () => ({
 }));
 
 const VALID_EMAIL = 'user@example.com';
+const VALID_PHONE = '09123456789';
 const VALID_PASSWORD = 'secret123';
 
-function fillForm(wrapper: ReturnType<typeof mount>, email: string, password: string) {
-  const emailInput = wrapper.get('input[type="email"]');
+function fillForm(
+  wrapper: ReturnType<typeof mount>,
+  identifier: string,
+  password: string,
+) {
+  const identifierInput = wrapper.get('#identifier');
   const passwordInput = wrapper.get('input[type="password"]');
-  return Promise.all([emailInput.setValue(email), passwordInput.setValue(password)]);
+  return Promise.all([identifierInput.setValue(identifier), passwordInput.setValue(password)]);
 }
 
 async function submit(wrapper: ReturnType<typeof mount>) {
@@ -51,7 +56,11 @@ function mountPage() {
   });
 }
 
-describe('LoginPage (F-002)', () => {
+function mobileTab(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findAll('button').find((button) => button.text().includes('موبایل'));
+}
+
+describe('LoginPage (F-002, F-026)', () => {
   beforeEach(() => {
     loginMock.mockReset();
     pushMock.mockReset();
@@ -73,24 +82,41 @@ describe('LoginPage (F-002)', () => {
     expect(button.text()).toBe('ورود');
   });
 
-  it('renders the "فراموشی رمز عبور؟" and "ثبت‌نام" links', () => {
+  it('links to the forgot-password and registration pages', () => {
     const wrapper = mountPage();
 
-    const linkTexts = wrapper.findAll('a').map((link) => link.text());
-    expect(linkTexts).toContain('فراموشی رمز عبور؟');
-    expect(linkTexts).toContain('ثبت‌نام');
+    const links = wrapper.findAllComponents(RouterLinkStub);
+    const byText = (text: string) => links.find((link) => link.text() === text);
+
+    expect(byText('فراموشی رمز عبور؟')?.props('to')).toBe('/forgot-password');
+    expect(byText('ثبت‌نام')?.props('to')).toBe('/register');
   });
 
-  it('offers an email/mobile toggle with mobile marked unavailable', () => {
+  it('offers a working email/mobile toggle', async () => {
     const wrapper = mountPage();
 
-    expect(wrapper.text()).toContain('ایمیل');
-    expect(wrapper.text()).toContain('موبایل');
-
-    const mobile = wrapper.findAll('button').find((button) => button.text().includes('موبایل'));
+    const mobile = mobileTab(wrapper);
     expect(mobile).toBeDefined();
-    expect(mobile?.attributes('disabled')).toBeDefined();
-    expect(mobile?.text()).toContain('به‌زودی');
+    expect(mobile?.attributes('disabled')).toBeUndefined();
+
+    await mobile?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('#identifier').attributes('type')).toBe('tel');
+    expect(wrapper.text()).toContain('شماره تلفن');
+  });
+
+  it('switches back from mobile to email', async () => {
+    const wrapper = mountPage();
+
+    await mobileTab(wrapper)?.trigger('click');
+    await flushPromises();
+
+    const emailTab = wrapper.findAll('button').find((button) => button.text() === 'ایمیل');
+    await emailTab?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('#identifier').attributes('type')).toBe('email');
   });
 
   it('renders a remember-me checkbox', async () => {
@@ -135,7 +161,20 @@ describe('LoginPage (F-002)', () => {
     expect(wrapper.emitted('submit')).toBeUndefined();
   });
 
-  it('shows no errors and emits submit when the form is fully valid', async () => {
+  it('shows a Persian error when the mobile number is malformed', async () => {
+    const wrapper = mountPage();
+
+    await mobileTab(wrapper)?.trigger('click');
+    await flushPromises();
+
+    await fillForm(wrapper, 'not-a-phone', VALID_PASSWORD);
+    await submit(wrapper);
+
+    expect(wrapper.text()).toContain('شماره تلفن معتبر نیست');
+    expect(loginMock).not.toHaveBeenCalled();
+  });
+
+  it('shows no errors and emits the email identifier when the form is valid', async () => {
     const wrapper = mountPage();
 
     await fillForm(wrapper, 'test@example.com', 'password123');
@@ -143,22 +182,11 @@ describe('LoginPage (F-002)', () => {
 
     expect(wrapper.findAll('[role="alert"]')).toHaveLength(0);
     expect(wrapper.emitted('submit')).toEqual([
-      [{ email: 'test@example.com', password: 'password123' }],
+      [{ identifier: 'test@example.com', password: 'password123' }],
     ]);
   });
 
-  it('emits a submit event with the credentials when the form is valid', async () => {
-    const wrapper = mountPage();
-
-    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
-    await submit(wrapper);
-
-    expect(wrapper.emitted('submit')).toEqual([
-      [{ email: VALID_EMAIL, password: VALID_PASSWORD }],
-    ]);
-  });
-
-  it('submits the credentials through the auth store', async () => {
+  it('submits the email credentials through the auth store', async () => {
     const wrapper = mountPage();
 
     await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
@@ -168,9 +196,25 @@ describe('LoginPage (F-002)', () => {
     expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD);
   });
 
+  it('submits a normalized phone number as the identifier', async () => {
+    const wrapper = mountPage();
+
+    await mobileTab(wrapper)?.trigger('click');
+    await flushPromises();
+
+    await fillForm(wrapper, '0912 345 6789', VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(loginMock).toHaveBeenCalledWith(VALID_PHONE, VALID_PASSWORD);
+    expect(wrapper.emitted('submit')).toEqual([
+      [{ identifier: VALID_PHONE, password: VALID_PASSWORD }],
+    ]);
+  });
+
   it('shows the Persian message when the credentials are rejected', async () => {
     loginMock.mockRejectedValueOnce(
-      new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password'),
+      new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid credentials'),
     );
 
     const wrapper = mountPage();
@@ -200,14 +244,5 @@ describe('LoginPage (F-002)', () => {
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/dashboard');
-  });
-
-  it('links to the registration page', () => {
-    const wrapper = mountPage();
-
-    const link = wrapper.findComponent(RouterLinkStub);
-
-    expect(link.exists()).toBe(true);
-    expect(link.props('to')).toBe('/register');
   });
 });

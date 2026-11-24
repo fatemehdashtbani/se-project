@@ -1,26 +1,41 @@
 <template>
-  <div dir="rtl" class="min-h-full flex flex-col items-center justify-center gap-4 bg-gray-100 px-4 py-12">
-    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+  <div dir="rtl" class="min-h-screen bg-slate-900 text-slate-100">
+    <header class="border-b border-slate-800 bg-slate-900">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <p class="text-xl font-extrabold tracking-tight text-white sm:text-2xl">روتین کده</p>
 
-    <RouterLink
-      to="/profile"
-      class="rounded-lg border border-blue-600 px-4 py-2.5 font-medium text-blue-600 transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-    >
-      پروفایل
-    </RouterLink>
+        <div class="flex items-center gap-3 sm:gap-5">
+          <RouterLink
+            to="/profile"
+            aria-label="پروفایل"
+            class="rounded-full p-1 text-slate-300 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+          >
+            <ProfileIcon class="h-7 w-7" />
+          </RouterLink>
 
-    <button
-      type="button"
-      class="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-      @click="handleLogout"
-    >
-      خروج
-    </button>
+          <button
+            type="button"
+            class="rounded-lg px-2 py-1.5 text-sm font-medium text-white transition-colors hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+            @click="handleLogout"
+          >
+            خروج از حساب
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <h1 class="text-2xl font-bold text-white">داشبورد</h1>
+      <p class="mt-2 text-sm text-slate-400">
+        به روتین کده خوش آمدید؛ روتین‌های شما به‌زودی اینجا نمایش داده می‌شوند.
+      </p>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();

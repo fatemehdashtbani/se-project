@@ -1,6 +1,6 @@
 # Feature Specification — F-026 Auth UI Redesign & Profile Fields
 
-- Status: Implemented
+- Status: Done
 - Owner: Project team
 - Related backlog item: F-026
 - Related ADRs: ADR-0008 (FarsiUI)
