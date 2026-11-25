@@ -19,7 +19,7 @@ describe('panelPath (F-030)', () => {
 
     expect(roles.map((role) => roleLabels[role])).toEqual([
       'کاربر',
-      'منتور',
+      'مربی',
       'مدیر سامانه',
     ]);
   });

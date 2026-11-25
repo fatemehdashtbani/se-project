@@ -8,6 +8,6 @@ export function panelPath(role: UserRole | null | undefined): string {
 /** Persian labels for the server-owned roles. */
 export const roleLabels: Record<UserRole, string> = {
   user: 'کاربر',
-  mentor: 'منتور',
+  mentor: 'مربی',
   admin: 'مدیر سامانه',
 };

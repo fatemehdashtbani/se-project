@@ -188,7 +188,7 @@
         v-else-if="authStore.user?.role === 'mentor'"
         class="mt-10 rounded-2xl border border-slate-800 bg-slate-800/40 p-5 sm:p-6"
       >
-        <h2 class="text-xl font-semibold text-white">مربی و مشاور</h2>
+        <h2 class="text-xl font-semibold text-white">مربی/مشاور</h2>
         <p class="mt-2 text-sm text-slate-400">به میز کار مربی بروید.</p>
         <RouterLink
           to="/mentor"
