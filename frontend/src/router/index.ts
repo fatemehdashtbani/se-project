@@ -25,6 +25,24 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/checklist',
+      name: 'checklist',
+      component: () => import('@/views/ChecklistPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/calendar',
+      name: 'calendar',
+      component: () => import('@/views/CalendarPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/notes',
+      name: 'notes',
+      component: () => import('@/views/NotesPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/register',
       name: 'register',
       component: () => import('@/views/RegisterPage.vue'),

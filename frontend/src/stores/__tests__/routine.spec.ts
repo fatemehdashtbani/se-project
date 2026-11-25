@@ -89,6 +89,42 @@ describe('useRoutineStore (F-005)', () => {
     expect(store.isLoading).toBe(false);
   });
 
+  it('updateRoutine() puts the edit and replaces only that routine', async () => {
+    const otherRoutine = { ...ROUTINE, id: 'another-id', title: 'ورزش' };
+    const updated = { ...ROUTINE, title: 'صبحانه سالم', description: null };
+    const store = useRoutineStore();
+    store.$patch({ routines: [ROUTINE, otherRoutine] });
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, updated));
+
+    await store.updateRoutine(ROUTINE.id, 'صبحانه سالم', null);
+
+    expect(store.routines).toEqual([updated, otherRoutine]);
+    expect(store.isLoading).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/v1/routines/${ROUTINE.id}`,
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({ title: 'صبحانه سالم', description: null }),
+      }),
+    );
+  });
+
+  it('updateRoutine() keeps the list untouched when the request fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(404, { error: { code: 'ROUTINE_NOT_FOUND', message: 'Missing' } }),
+    );
+
+    const store = useRoutineStore();
+    store.$patch({ routines: [ROUTINE] });
+
+    await expect(store.updateRoutine(ROUTINE.id, 'x', null)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(store.routines).toEqual([ROUTINE]);
+    expect(store.isLoading).toBe(false);
+  });
+
   it('deleteRoutine() removes only the deleted routine', async () => {
     const otherRoutine = { ...ROUTINE, id: 'another-id', title: 'ورزش' };
     const store = useRoutineStore();

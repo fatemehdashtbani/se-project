@@ -1,16 +1,18 @@
 """SQLAlchemy models for identity data."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     MetaData,
     String,
     Text,
     Uuid,
+    false,
     func,
     true,
 )
@@ -61,6 +63,15 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     routines: Mapped[list["Routine"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    checklist_items: Mapped[list["ChecklistItem"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    notes: Mapped[list["Note"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    calendar_events: Mapped[list["CalendarEvent"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -168,3 +179,90 @@ class Routine(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="routines")
+
+
+class ChecklistItem(Base):
+    """One line of a user's personal checklist (F-033).
+
+    Checklist items have no soft-delete: unlike routines they are not
+    referenced by other records, so removing one deletes the row.
+    """
+
+    __tablename__ = "checklist_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    is_done: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    user: Mapped[User] = relationship(back_populates="checklist_items")
+
+
+class Note(Base):
+    """A free-form note owned by one user (F-033)."""
+
+    __tablename__ = "notes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    user: Mapped[User] = relationship(back_populates="notes")
+
+
+class CalendarEvent(Base):
+    """A dated entry shown in a user's calendar (F-033)."""
+
+    __tablename__ = "calendar_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    event_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="calendar_events")

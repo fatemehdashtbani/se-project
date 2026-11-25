@@ -58,7 +58,11 @@ describe('useAuthStore (F-023)', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify({ identifier: USER.email, password: 'secret123' }),
+        body: JSON.stringify({
+          identifier: USER.email,
+          password: 'secret123',
+          remember_me: false,
+        }),
       }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -82,7 +86,11 @@ describe('useAuthStore (F-023)', () => {
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify({ identifier: USER.phone_number, password: 'secret123' }),
+        body: JSON.stringify({
+          identifier: USER.phone_number,
+          password: 'secret123',
+          remember_me: false,
+        }),
       }),
     );
     expect(store.user).toEqual(USER);
@@ -163,16 +171,44 @@ describe('useAuthStore (F-023)', () => {
   });
 
   it('init() leaves the user null when /me returns 401', async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse(401, {
-        error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
-      }),
-    );
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(401, {
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(401, {
+          error: { code: 'INVALID_REFRESH_TOKEN', message: 'Invalid refresh token' },
+        }),
+      );
 
     const store = useAuthStore();
     await store.init();
 
     expect(store.user).toBeNull();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/auth/refresh',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    );
+  });
+
+  it('init() restores a remembered session after the access token expired', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(401, {
+          error: { code: 'TOKEN_EXPIRED', message: 'Access token has expired' },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { message: 'Tokens refreshed successfully' }))
+      .mockResolvedValueOnce(jsonResponse(200, USER));
+
+    const store = useAuthStore();
+    await store.init();
+
+    expect(store.user).toEqual(USER);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('updateTimezone() persists the zone and reflects it on the user', async () => {
@@ -297,6 +333,7 @@ describe('useAuthStore (F-023)', () => {
         body: JSON.stringify({
           identifier: REGISTRATION.email,
           password: REGISTRATION.password,
+          remember_me: true,
         }),
       }),
     );

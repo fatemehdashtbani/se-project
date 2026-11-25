@@ -91,6 +91,9 @@ class LoginRequest(BaseModel):
 
     identifier: str = Field(min_length=1, max_length=320)
     password: str = Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)
+    # When true the session survives a browser restart; when false both session
+    # cookies are non-persistent and end with the browser session (F-002).
+    remember_me: bool = False
 
     @field_validator("identifier")
     @classmethod

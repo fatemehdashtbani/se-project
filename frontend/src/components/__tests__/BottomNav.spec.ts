@@ -49,21 +49,32 @@ describe('BottomNav (F-029)', () => {
     expect(items.classes()).toContain('py-3');
   });
 
-  it('links home and routines to the dashboard and profile to /profile', () => {
+  it('links the dashboard, the three personal tools, and the profile', () => {
     const wrapper = mountNav();
 
     const links = wrapper.findAllComponents(RouterLinkStub);
 
-    expect(links).toHaveLength(3);
+    expect(links).toHaveLength(6);
     expect(links.map((link) => link.props('to'))).toEqual([
       '/dashboard',
       '/dashboard',
+      '/checklist',
+      '/calendar',
+      '/notes',
       '/profile',
     ]);
-    expect(wrapper.text()).toContain('خانه');
-    expect(wrapper.text()).toContain('روتینها');
-    expect(wrapper.text()).toContain('پروفایل');
-    expect(wrapper.text()).toContain('خروج');
+
+    for (const label of [
+      'خانه',
+      'روتین‌ها',
+      'چک‌لیست',
+      'تقویم',
+      'یادداشت‌ها',
+      'پروفایل',
+      'خروج',
+    ]) {
+      expect(wrapper.text()).toContain(label);
+    }
   });
 
   it('uses the existing profile icon and the new logout icon', () => {

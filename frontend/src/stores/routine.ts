@@ -52,6 +52,25 @@ export const useRoutineStore = defineStore('routine', {
       }
     },
 
+    /** Apply an edit and mirror the server's representation in the list. */
+    async updateRoutine(
+      id: string,
+      title: string,
+      description: string | null = null,
+    ): Promise<void> {
+      this.isLoading = true;
+
+      try {
+        const routine = await apiRequest<Routine>(`/api/v1/routines/${id}`, {
+          method: 'PUT',
+          body: { title, description },
+        });
+        this.routines = this.routines.map((item) => (item.id === id ? routine : item));
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     /** Remove a routine from the list after the server accepted the delete. */
     async deleteRoutine(id: string): Promise<void> {
       this.isLoading = true;

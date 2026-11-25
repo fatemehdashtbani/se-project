@@ -16,11 +16,13 @@ const {
   routineStore,
   fetchRoutinesMock,
   createRoutineMock,
+  updateRoutineMock,
   deleteRoutineMock,
 } = vi.hoisted(() => {
   return {
     fetchRoutinesMock: vi.fn(),
     createRoutineMock: vi.fn(),
+    updateRoutineMock: vi.fn(),
     deleteRoutineMock: vi.fn(),
     authStore: {
       user: null as {
@@ -41,6 +43,7 @@ const {
       isLoading: false,
       fetchRoutines: vi.fn(),
       createRoutine: vi.fn(),
+      updateRoutine: vi.fn(),
       deleteRoutine: vi.fn(),
     },
   };
@@ -84,9 +87,11 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
   beforeEach(() => {
     fetchRoutinesMock.mockReset().mockResolvedValue(undefined);
     createRoutineMock.mockReset().mockResolvedValue(undefined);
+    updateRoutineMock.mockReset().mockResolvedValue(undefined);
     deleteRoutineMock.mockReset().mockResolvedValue(undefined);
     routineStore.fetchRoutines = fetchRoutinesMock;
     routineStore.createRoutine = createRoutineMock;
+    routineStore.updateRoutine = updateRoutineMock;
     routineStore.deleteRoutine = deleteRoutineMock;
     routineStore.routines = [];
     authStore.user = { ...SIGNED_IN_USER };
@@ -162,18 +167,64 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
     expect(wrapper.text()).not.toContain(ROUTINE.title);
   });
 
-  it('renders each routine with its title, description, and delete control', async () => {
+  it('renders each routine with its title, description, and edit/delete controls', async () => {
     routineStore.routines = [ROUTINE, { ...ROUTINE, id: 'second-id', title: 'ورزش', description: null }];
     const wrapper = mountPage();
 
     expect(wrapper.text()).toContain('صبحانه');
     expect(wrapper.text()).toContain('هر روز صبح ساعت ۷');
     expect(wrapper.text()).toContain('ورزش');
+    expect(wrapper.findAll('button').filter((button) => button.text() === 'ویرایش')).toHaveLength(2);
     expect(wrapper.findAll('button').filter((button) => button.text() === 'حذف')).toHaveLength(2);
 
     await findButton(wrapper, 'حذف').trigger('click');
 
     expect(deleteRoutineMock).toHaveBeenCalledWith(ROUTINE.id);
+  });
+
+  it('edits a routine in place and saves the changes', async () => {
+    routineStore.routines = [ROUTINE];
+    const wrapper = mountPage();
+
+    await findButton(wrapper, 'ویرایش').trigger('click');
+
+    const titleInput = wrapper.get(`input#routine-edit-title-${ROUTINE.id}`);
+    const descriptionInput = wrapper.get(`textarea#routine-edit-description-${ROUTINE.id}`);
+    expect((titleInput.element as HTMLInputElement).value).toBe('صبحانه');
+    expect((descriptionInput.element as HTMLTextAreaElement).value).toBe('هر روز صبح ساعت ۷');
+
+    await titleInput.setValue('صبحانه سالم');
+    await descriptionInput.setValue('');
+    await wrapper.get('li form').trigger('submit');
+    await flushPromises();
+
+    expect(updateRoutineMock).toHaveBeenCalledWith(ROUTINE.id, 'صبحانه سالم', null);
+    expect(wrapper.find(`input#routine-edit-title-${ROUTINE.id}`).exists()).toBe(false);
+  });
+
+  it('cancels an edit without saving', async () => {
+    routineStore.routines = [ROUTINE];
+    const wrapper = mountPage();
+
+    await findButton(wrapper, 'ویرایش').trigger('click');
+    await findButton(wrapper, 'انصراف').trigger('click');
+
+    expect(updateRoutineMock).not.toHaveBeenCalled();
+    expect(wrapper.find(`input#routine-edit-title-${ROUTINE.id}`).exists()).toBe(false);
+    expect(wrapper.text()).toContain('صبحانه');
+  });
+
+  it('does not save an edit with a blank title', async () => {
+    routineStore.routines = [ROUTINE];
+    const wrapper = mountPage();
+
+    await findButton(wrapper, 'ویرایش').trigger('click');
+    await wrapper.get(`input#routine-edit-title-${ROUTINE.id}`).setValue('   ');
+    await wrapper.get('li form').trigger('submit');
+    await flushPromises();
+
+    expect(updateRoutineMock).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('عنوان روتین الزامی است.');
   });
 
   it('opens an inline form and saves a new routine', async () => {

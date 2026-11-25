@@ -19,3 +19,4 @@
 - [x] Soft-delete keeps the row in the DB (`deleted_at`, `is_active=False`) and hides it from the API.
 - [x] Soft-deleted routines are hidden in the UI (the list is rendered from the API's active routines).
 - [x] Ownership is strictly enforced (foreign ids answer 404 `ROUTINE_NOT_FOUND`).
+- [x] Editing is available from the dashboard: each routine card has «ویرایش» next to «حذف» and saves through `useRoutineStore.updateRoutine` → `PUT /api/v1/routines/{id}`.

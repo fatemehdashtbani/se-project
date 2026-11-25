@@ -7,12 +7,12 @@ from httpx import AsyncClient
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.infrastructure.db.models import PasswordResetToken
-
-from .test_forgot_password import FORGOT_URL, FakeSender, _token_from
 from app.api.dependencies import get_email_sender
+from app.infrastructure.db.models import PasswordResetToken
 from app.infrastructure.email import EmailContent
 from app.main import app
+
+from .test_forgot_password import FORGOT_URL, FakeSender, _token_from
 
 REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"

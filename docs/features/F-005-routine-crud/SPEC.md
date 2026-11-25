@@ -13,7 +13,7 @@ The platform is useless without routines. Users need to create, view, edit, and 
 - Backend `Routine` SQLAlchemy model and Alembic migration.
 - Endpoints: `POST /api/v1/routines`, `GET /api/v1/routines`, `GET /api/v1/routines/{id}`, `PUT /api/v1/routines/{id}`, `DELETE /api/v1/routines/{id}`.
 - Enforce ownership: Users can only access their own routines.
-- Frontend: `DashboardPage.vue` displays a list of the user's routines. A simple "Create Routine" modal or page.
+- Frontend: `DashboardPage.vue` displays a list of the user's routines with inline create, edit (title and description), and delete controls.
 - Frontend: Pinia store `useRoutineStore`.
 
 ### Out of scope

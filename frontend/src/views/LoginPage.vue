@@ -143,18 +143,61 @@ const LOGIN_MODES: ReadonlyArray<{ value: LoginMode; label: string }> = [
 const authStore = useAuthStore();
 const router = useRouter();
 
-const mode = ref<LoginMode>('email');
-const identifier = ref('');
+// Only the identifier is remembered, never the password: the password is not
+// stored anywhere in the browser. An unchecked box removes the entry again.
+const REMEMBERED_IDENTIFIER_KEY = 'routine-kade-remembered-identifier';
+
+interface RememberedLogin {
+  identifier: string;
+  mode: LoginMode;
+}
+
+function readRememberedLogin(): RememberedLogin | null {
+  try {
+    const raw = localStorage.getItem(REMEMBERED_IDENTIFIER_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<RememberedLogin>;
+    if (typeof parsed.identifier !== 'string' || !parsed.identifier) {
+      return null;
+    }
+
+    return {
+      identifier: parsed.identifier,
+      mode: parsed.mode === 'mobile' ? 'mobile' : 'email',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function storeRememberedLogin(value: RememberedLogin | null): void {
+  try {
+    if (value === null) {
+      localStorage.removeItem(REMEMBERED_IDENTIFIER_KEY);
+      return;
+    }
+
+    localStorage.setItem(REMEMBERED_IDENTIFIER_KEY, JSON.stringify(value));
+  } catch {
+    // Private mode or a full quota: forgetting the convenience is harmless.
+  }
+}
+
+// A stored identifier only exists because the visitor asked to be remembered,
+// so it is also the initial state of the checkbox.
+const rememberedLogin = readRememberedLogin();
+
+const mode = ref<LoginMode>(rememberedLogin?.mode ?? 'email');
+const identifier = ref(rememberedLogin?.identifier ?? '');
 const password = ref('');
-const rememberMe = ref(false);
+const rememberMe = ref(rememberedLogin !== null);
 const errors = reactive({ identifier: '', password: '' });
 const serverError = ref('');
 
 const identifierLabel = computed(() => (mode.value === 'email' ? 'ایمیل' : 'شماره تلفن'));
-
-const emit = defineEmits<{
-  submit: [payload: { identifier: string; password: string }];
-}>();
 
 function selectMode(next: LoginMode): void {
   if (next === mode.value) {
@@ -188,10 +231,12 @@ async function handleSubmit(): Promise<void> {
 
   const identifierValue = normalizedIdentifier();
   serverError.value = '';
-  emit('submit', { identifier: identifierValue, password: password.value });
 
   try {
-    await authStore.login(identifierValue, password.value);
+    await authStore.login(identifierValue, password.value, rememberMe.value);
+    storeRememberedLogin(
+      rememberMe.value ? { identifier: identifierValue, mode: mode.value } : null,
+    );
     await router.push(panelPath(authStore.user?.role));
   } catch (error) {
     serverError.value = getPersianError(

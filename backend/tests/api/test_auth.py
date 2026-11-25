@@ -189,6 +189,87 @@ async def test_login_returns_http_only_cookies_and_records_refresh_token(
     assert len(refresh_row.token_hash) == 64
 
 
+async def test_login_sets_browser_session_cookies_without_remember_me(
+    client: AsyncClient,
+) -> None:
+    """Unchecked "remember me": the browser drops the cookies when it closes.
+
+    No ``remember_session`` marker is left behind, so a later refresh cannot
+    accidentally promote the session to a persistent one.
+    """
+    email = "session.only@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+
+    response = await _login(client, email)
+
+    assert response.status_code == 200
+    cookie_headers = _set_cookie_headers(response)
+    for name in ("access_token", "refresh_token"):
+        assert "max-age" not in cookie_headers[name].lower()
+
+    assert _cookie_payload(cookie_headers["remember_session"]) == ""
+    assert "max-age=0" in cookie_headers["remember_session"].lower()
+
+
+async def test_login_sets_persistent_cookies_with_remember_me(
+    client: AsyncClient,
+) -> None:
+    """Checked "remember me": Max-Age keeps the session across browser restarts."""
+    email = "remember.me@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+
+    response = await client.post(
+        LOGIN_URL,
+        json={"identifier": email, "password": PASSWORD, "remember_me": True},
+    )
+
+    assert response.status_code == 200
+    cookie_headers = _set_cookie_headers(response)
+    settings = get_settings()
+    access_max_age = settings.access_token_ttl_minutes * 60
+    refresh_max_age = settings.refresh_token_ttl_days * 24 * 60 * 60
+
+    assert f"max-age={access_max_age}" in cookie_headers["access_token"].lower()
+    assert f"max-age={refresh_max_age}" in cookie_headers["refresh_token"].lower()
+    assert f"max-age={refresh_max_age}" in cookie_headers["remember_session"].lower()
+    assert _cookie_payload(cookie_headers["remember_session"]) == "1"
+
+
+async def test_refresh_keeps_the_remember_me_lifetime(client: AsyncClient) -> None:
+    """Rotation must not turn a remembered session into a browser-session one."""
+    email = "remember.refresh@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    login = await client.post(
+        LOGIN_URL,
+        json={"identifier": email, "password": PASSWORD, "remember_me": True},
+    )
+    assert login.status_code == 200
+
+    response = await client.post(REFRESH_URL)
+
+    assert response.status_code == 200
+    cookie_headers = _set_cookie_headers(response)
+    for name in ("access_token", "refresh_token", "remember_session"):
+        assert "max-age" in cookie_headers[name].lower()
+
+
+async def test_refresh_of_a_browser_session_stays_session_only(
+    client: AsyncClient,
+) -> None:
+    """Rotation without the marker must not extend the session past the browser."""
+    email = "session.refresh@example.com"
+    assert (await _register_user(client, email)).status_code == 201
+    assert (await _login(client, email)).status_code == 200
+
+    response = await client.post(REFRESH_URL)
+
+    assert response.status_code == 200
+    cookie_headers = _set_cookie_headers(response)
+    for name in ("access_token", "refresh_token"):
+        assert "max-age" not in cookie_headers[name].lower()
+    assert "max-age=0" in cookie_headers["remember_session"].lower()
+
+
 async def test_login_rejects_wrong_password(client: AsyncClient) -> None:
     email = "wrong.password@example.com"
     assert (await _register_user(client, email)).status_code == 201
@@ -344,7 +425,7 @@ async def test_logout_clears_cookies_and_revokes_refresh_token(
     assert response.status_code in {200, 204}
 
     cookie_headers = _set_cookie_headers(response)
-    for name in ("access_token", "refresh_token"):
+    for name in ("access_token", "refresh_token", "remember_session"):
         assert name in cookie_headers
         assert _cookie_payload(cookie_headers[name]) == ""
         assert "max-age=0" in cookie_headers[name].lower()

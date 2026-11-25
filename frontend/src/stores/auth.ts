@@ -38,14 +38,23 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    /** Authenticate with an email or phone identifier plus the password. */
-    async login(identifier: string, password: string): Promise<void> {
+    /** Authenticate with an email or phone identifier plus the password.
+     *
+     * ``rememberMe`` asks the server for persistent cookies so the session
+     * survives closing the browser; without it the cookies end with the
+     * browser session.
+     */
+    async login(
+      identifier: string,
+      password: string,
+      rememberMe = false,
+    ): Promise<void> {
       this.isLoading = true;
 
       try {
         await apiRequest<{ message: string }>('/api/v1/auth/login', {
           method: 'POST',
-          body: { identifier, password },
+          body: { identifier, password, remember_me: rememberMe },
         });
 
         // Login only returns a message; the session cookie is the real state.
@@ -129,7 +138,7 @@ export const useAuthStore = defineStore('auth', {
           },
         });
 
-        await this.login(payload.email, payload.password);
+        await this.login(payload.email, payload.password, true);
       } finally {
         this.isLoading = false;
       }

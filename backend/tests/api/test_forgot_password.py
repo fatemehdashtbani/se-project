@@ -16,8 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.dependencies import get_email_sender
 from app.infrastructure.db.models import PasswordResetToken, User
-from app.infrastructure.email import EmailContent, EmailContent as _Content  # noqa: F401
-from app.infrastructure.email import EmailDeliveryError
+from app.infrastructure.email import EmailContent, EmailDeliveryError
 from app.main import app
 
 FORGOT_URL = "/api/v1/auth/forgot-password"

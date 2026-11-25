@@ -64,6 +64,7 @@ describe('LoginPage (F-002, F-026)', () => {
   beforeEach(() => {
     loginMock.mockReset();
     pushMock.mockReset();
+    localStorage.clear();
     authStore.user = null;
     authStore.isLoading = false;
   });
@@ -129,6 +130,53 @@ describe('LoginPage (F-002, F-026)', () => {
     expect((checkbox.element as HTMLInputElement).checked).toBe(true);
   });
 
+  it('passes the remember-me choice to the auth store and keeps the email', async () => {
+    const wrapper = mountPage();
+
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await wrapper.get('input[type="checkbox"]').setValue(true);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD, true);
+    expect(localStorage.getItem('routine-kade-remembered-identifier')).toBe(
+      JSON.stringify({ identifier: VALID_EMAIL, mode: 'email' }),
+    );
+  });
+
+  it('prefills a remembered email and checks the box on the next visit', async () => {
+    localStorage.setItem(
+      'routine-kade-remembered-identifier',
+      JSON.stringify({ identifier: VALID_EMAIL, mode: 'email' }),
+    );
+
+    const wrapper = mountPage();
+    await flushPromises();
+
+    expect((wrapper.get('#identifier').element as HTMLInputElement).value).toBe(VALID_EMAIL);
+    expect((wrapper.get('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
+  it('forgets the email when remember-me is unchecked', async () => {
+    localStorage.setItem(
+      'routine-kade-remembered-identifier',
+      JSON.stringify({ identifier: VALID_EMAIL, mode: 'email' }),
+    );
+
+    const wrapper = mountPage();
+    await flushPromises();
+
+    await wrapper.get('input[type="checkbox"]').setValue(false);
+    await wrapper.get('input[type="password"]').setValue(VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD, false);
+    expect(localStorage.getItem('routine-kade-remembered-identifier')).toBeNull();
+  });
+
   it('shows a Persian error for the email when the form is submitted empty', async () => {
     const wrapper = mountPage();
 
@@ -158,7 +206,7 @@ describe('LoginPage (F-002, F-026)', () => {
     await submit(wrapper);
 
     expect(wrapper.text()).toContain('فرمت ایمیل معتبر نیست');
-    expect(wrapper.emitted('submit')).toBeUndefined();
+    expect(loginMock).not.toHaveBeenCalled();
   });
 
   it('shows a Persian error when the mobile number is malformed', async () => {
@@ -174,16 +222,14 @@ describe('LoginPage (F-002, F-026)', () => {
     expect(loginMock).not.toHaveBeenCalled();
   });
 
-  it('shows no errors and emits the email identifier when the form is valid', async () => {
+  it('shows no errors and logs in when the form is valid', async () => {
     const wrapper = mountPage();
 
     await fillForm(wrapper, 'test@example.com', 'password123');
     await submit(wrapper);
 
     expect(wrapper.findAll('[role="alert"]')).toHaveLength(0);
-    expect(wrapper.emitted('submit')).toEqual([
-      [{ identifier: 'test@example.com', password: 'password123' }],
-    ]);
+    expect(loginMock).toHaveBeenCalledWith('test@example.com', 'password123', false);
   });
 
   it('submits the email credentials through the auth store', async () => {
@@ -193,7 +239,7 @@ describe('LoginPage (F-002, F-026)', () => {
     await submit(wrapper);
     await flushPromises();
 
-    expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD);
+    expect(loginMock).toHaveBeenCalledWith(VALID_EMAIL, VALID_PASSWORD, false);
   });
 
   it('submits a normalized phone number as the identifier', async () => {
@@ -206,10 +252,7 @@ describe('LoginPage (F-002, F-026)', () => {
     await submit(wrapper);
     await flushPromises();
 
-    expect(loginMock).toHaveBeenCalledWith(VALID_PHONE, VALID_PASSWORD);
-    expect(wrapper.emitted('submit')).toEqual([
-      [{ identifier: VALID_PHONE, password: VALID_PASSWORD }],
-    ]);
+    expect(loginMock).toHaveBeenCalledWith(VALID_PHONE, VALID_PASSWORD, false);
   });
 
   it('shows the Persian message when the credentials are rejected', async () => {

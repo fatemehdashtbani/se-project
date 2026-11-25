@@ -26,12 +26,6 @@ from app.schemas.auth import (
     TimezoneUpdateRequest,
     UserResponse,
 )
-from app.services.password_reset import (
-    build_reset_url,
-    discard_password_reset,
-    request_password_reset,
-    reset_password,
-)
 from app.services.identity import (
     InvalidCredentialsError,
     authenticate_user,
@@ -43,6 +37,12 @@ from app.services.identity import (
     update_profile,
     update_timezone,
 )
+from app.services.password_reset import (
+    build_reset_url,
+    discard_password_reset,
+    request_password_reset,
+    reset_password,
+)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -51,10 +51,20 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 
 
+# Marks a remembered session so a later refresh keeps its lifetime. It carries
+# no identity or secret, and its presence alone means "remember me"; the cookie
+# is cleared on login without the box and on logout.
+REMEMBER_COOKIE = "remember_session"
+
+
 def _session_cookie(
-    response: JSONResponse, name: str, value: str, max_age: int
+    response: JSONResponse, name: str, value: str, max_age: int | None = None
 ) -> None:
-    """Set a session cookie with the attributes mandated by SPEC section 9."""
+    """Set a session cookie with the attributes mandated by SPEC section 9.
+
+    ``max_age=None`` omits ``Max-Age``, which makes the browser drop the cookie
+    when it closes: that is how unchecked "remember me" behaves.
+    """
     settings = get_settings()
     response.set_cookie(
         name,
@@ -68,20 +78,32 @@ def _session_cookie(
 
 
 def _token_response(
-    message: str, access_token: str, refresh_token: str
+    message: str,
+    access_token: str,
+    refresh_token: str,
+    persistent: bool,
 ) -> JSONResponse:
-    """Return ``message`` with both session cookies attached."""
+    """Return ``message`` with both session cookies attached.
+
+    ``persistent`` is the user's "remember me" choice: only then do the cookies
+    carry a ``Max-Age`` and outlive the browser session.
+    """
     settings = get_settings()
     response = JSONResponse({"message": message})
-    _session_cookie(
-        response, "access_token", access_token, settings.access_token_ttl_minutes * 60
+    access_max_age: int | None = (
+        settings.access_token_ttl_minutes * 60 if persistent else None
     )
-    _session_cookie(
-        response,
-        "refresh_token",
-        refresh_token,
-        settings.refresh_token_ttl_days * 24 * 60 * 60,
+    refresh_max_age: int | None = (
+        settings.refresh_token_ttl_days * 24 * 60 * 60 if persistent else None
     )
+    _session_cookie(response, "access_token", access_token, access_max_age)
+    _session_cookie(response, "refresh_token", refresh_token, refresh_max_age)
+    if persistent:
+        _session_cookie(response, REMEMBER_COOKIE, "1", refresh_max_age)
+    else:
+        # No marker at all for a browser-session login; clear a stale one left
+        # by an earlier remembered login.
+        _session_cookie(response, REMEMBER_COOKIE, "", 0)
     return response
 
 
@@ -112,7 +134,12 @@ async def login(payload: LoginRequest, session: SessionDep) -> JSONResponse:
         raise InvalidCredentialsError
 
     access_token, refresh_token = await issue_tokens(session, user)
-    return _token_response("Logged in successfully", access_token, refresh_token)
+    return _token_response(
+        "Logged in successfully",
+        access_token,
+        refresh_token,
+        persistent=payload.remember_me,
+    )
 
 
 @router.post("/forgot-password")
@@ -170,8 +197,13 @@ async def refresh(request: Request, session: SessionDep) -> JSONResponse:
         )
 
     access_token, new_refresh_token = await rotate_refresh_token(session, refresh_token)
+    # Keep the lifetime the user chose at login instead of silently turning a
+    # "remember me" session into a browser-session-only one (or the reverse).
     return _token_response(
-        "Tokens refreshed successfully", access_token, new_refresh_token
+        "Tokens refreshed successfully",
+        access_token,
+        new_refresh_token,
+        persistent=REMEMBER_COOKIE in request.cookies,
     )
 
 
@@ -234,4 +266,5 @@ async def logout(request: Request, session: SessionDep) -> JSONResponse:
     response = JSONResponse({"message": "Logged out successfully"})
     _session_cookie(response, "access_token", "", 0)
     _session_cookie(response, "refresh_token", "", 0)
+    _session_cookie(response, REMEMBER_COOKIE, "", 0)
     return response
