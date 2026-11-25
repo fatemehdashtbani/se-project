@@ -35,6 +35,18 @@
             {{ selectedDateLabel }}
           </p>
         </div>
+        <div>
+          <label for="event-new-time" class="mb-1 block text-sm font-medium text-slate-200">
+            ساعت (اختیاری)
+          </label>
+          <input
+            id="event-new-time"
+            v-model="newTime"
+            type="time"
+            dir="ltr"
+            class="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+          />
+        </div>
         <button
           type="submit"
           class="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/70"
@@ -42,7 +54,10 @@
           افزودن
         </button>
       </form>
-      <p class="mt-2 text-xs text-slate-500">برای تغییر تاریخ، روز مورد نظر را در تقویم انتخاب کنید.</p>
+      <p class="mt-2 text-xs text-slate-500">
+        برای تغییر تاریخ، روز مورد نظر را در تقویم انتخاب کنید؛ اگر ساعت خالی بماند رویداد برای کل روز ثبت
+        می‌شود.
+      </p>
 
       <p
         v-if="errorMessage"
@@ -121,7 +136,12 @@
             :key="event.id"
             class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/40 px-4 py-3"
           >
-            <span class="w-24 shrink-0 text-xs text-slate-400">{{ formatJalaliDate(event.event_date) }}</span>
+            <span class="w-28 shrink-0 text-xs text-slate-400">
+              {{ formatJalaliDate(event.event_date) }}
+              <span v-if="event.event_time" class="mt-0.5 block text-blue-300">
+                ساعت {{ formatEventTime(event.event_time) }}
+              </span>
+            </span>
             <span class="flex-1 text-sm text-slate-100">{{ event.title }}</span>
             <button
               type="button"
@@ -146,6 +166,7 @@ import { useCalendarStore, type CalendarEvent } from '@/stores/calendar';
 import {
   PERSIAN_WEEKDAYS,
   buildMonthCells,
+  formatEventTime,
   formatJalaliDate,
   jalaliDateKey,
   jalaliFromKey,
@@ -162,6 +183,7 @@ const viewYear = ref(start.jy);
 // Jalali months are 1-based in the helpers; keep the same convention here.
 const viewMonth = ref(start.jm);
 const newTitle = ref('');
+const newTime = ref('');
 const newEventDate = ref(todayKey());
 const errorMessage = ref('');
 
@@ -272,8 +294,9 @@ async function handleCreate(): Promise<void> {
   }
 
   try {
-    await calendarStore.createEvent(title, newEventDate.value);
+    await calendarStore.createEvent(title, newEventDate.value, newTime.value || null);
     newTitle.value = '';
+    newTime.value = '';
     errorMessage.value = '';
   } catch {
     errorMessage.value = 'ذخیره رویداد ناموفق بود.';

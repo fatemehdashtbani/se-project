@@ -50,6 +50,7 @@ async def create(
         current_user,
         title=payload.title,
         event_date=payload.event_date,
+        event_time=payload.event_time,
     )
     return CalendarEventResponse.model_validate(event)
 

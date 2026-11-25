@@ -1,7 +1,7 @@
 """SQLAlchemy models for identity data."""
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from sqlalchemy import (
     Boolean,
@@ -11,6 +11,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Text,
+    Time,
     Uuid,
     false,
     func,
@@ -261,6 +262,8 @@ class CalendarEvent(Base):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     event_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Optional local wall-clock time (F-034); the day boundary stays event_date.
+    event_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

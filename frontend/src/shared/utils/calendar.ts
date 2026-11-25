@@ -238,6 +238,16 @@ export function formatJalaliDate(key: string): string {
   return `${toPersianDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toPersianDigits(jy)}`;
 }
 
+/** e.g. «۱۴:۳۰» for the stored time `14:30:00`; empty when no time is set. */
+export function formatEventTime(value: string | null): string {
+  if (!value) {
+    return '';
+  }
+
+  const [hours = '00', minutes = '00'] = value.split(':');
+  return toPersianDigits(`${hours.padStart(2, '0')}:${minutes.slice(0, 2).padStart(2, '0')}`);
+}
+
 /** The local calendar day as an ISO Gregorian day key. */
 export function todayKey(): string {
   const now = new Date();

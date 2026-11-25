@@ -24,6 +24,7 @@ const EVENT: CalendarEvent = {
   id: '33333333-3333-4333-8333-333333333333',
   title: 'جلسه',
   event_date: '2026-12-10',
+  event_time: null,
   created_at: '2026-11-25T08:00:00Z',
 };
 
@@ -207,5 +208,22 @@ describe('useCalendarStore (F-033)', () => {
     await store.deleteEvent(EVENT.id);
 
     expect(store.events).toEqual([]);
+  });
+
+  it('createEvent() sends the time only when one is set', async () => {
+    const timed = { ...EVENT, event_time: '14:30:00' };
+    const store = useCalendarStore();
+    fetchMock.mockResolvedValueOnce(jsonResponse(201, timed));
+
+    await store.createEvent('جلسه', '2026-12-10', '14:30');
+
+    expect(store.events).toEqual([timed]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/calendar-events',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ title: 'جلسه', event_date: '2026-12-10', event_time: '14:30' }),
+      }),
+    );
   });
 });

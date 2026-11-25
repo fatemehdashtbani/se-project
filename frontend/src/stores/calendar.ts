@@ -6,6 +6,8 @@ export interface CalendarEvent {
   id: string;
   title: string;
   event_date: string;
+  /** Local wall-clock time (`HH:MM:SS`), or null for a day-only event (F-034). */
+  event_time: string | null;
   created_at: string;
 }
 
@@ -35,17 +37,23 @@ export const useCalendarStore = defineStore('calendar', {
       }
     },
 
-    /** Create an event for one day and append the server's representation. */
-    async createEvent(title: string, eventDate: string): Promise<void> {
+    /** Create an event for one day, optionally at one time, and append it. */
+    async createEvent(title: string, eventDate: string, eventTime?: string | null): Promise<void> {
       this.isLoading = true;
 
       try {
+        const body: Record<string, unknown> = { title, event_date: eventDate };
+        if (eventTime) {
+          body.event_time = eventTime;
+        }
+
         const event = await apiRequest<CalendarEvent>('/api/v1/calendar-events', {
           method: 'POST',
-          body: { title, event_date: eventDate },
+          body,
         });
         this.events = [...this.events, event].sort((a, b) =>
-          a.event_date.localeCompare(b.event_date),
+          a.event_date.localeCompare(b.event_date) ||
+          (a.event_time ?? '').localeCompare(b.event_time ?? ''),
         );
       } finally {
         this.isLoading = false;

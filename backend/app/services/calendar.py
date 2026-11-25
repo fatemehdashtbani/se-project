@@ -1,7 +1,7 @@
 """Calendar event application services: owner-scoped CRUD (F-033)."""
 
 import uuid
-from datetime import date
+from datetime import date, time
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,9 +53,16 @@ async def list_events(
 
 
 async def create_event(
-    session: AsyncSession, user: User, *, title: str, event_date: date
+    session: AsyncSession,
+    user: User,
+    *,
+    title: str,
+    event_date: date,
+    event_time: time | None = None,
 ) -> CalendarEvent:
-    event = CalendarEvent(user_id=user.id, title=title, event_date=event_date)
+    event = CalendarEvent(
+        user_id=user.id, title=title, event_date=event_date, event_time=event_time
+    )
     session.add(event)
     await session.commit()
     await session.refresh(event)

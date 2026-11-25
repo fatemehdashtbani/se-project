@@ -1,7 +1,7 @@
 """Request and response schemas for calendar events (F-033)."""
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -21,6 +21,7 @@ class CalendarEventCreate(BaseModel):
 
     title: str = Field(max_length=MAX_TITLE_LENGTH)
     event_date: date
+    event_time: time | None = None
 
     @field_validator("title")
     @classmethod
@@ -37,6 +38,7 @@ class CalendarEventResponse(BaseModel):
     id: uuid.UUID
     title: str
     event_date: date
+    event_time: time | None
     created_at: datetime
 
 

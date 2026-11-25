@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMonthCells,
   dateKey,
+  formatEventTime,
   formatJalaliDate,
   gregorianToJalali,
   isJalaliLeapYear,
@@ -61,5 +62,11 @@ describe('calendar helpers (F-033)', () => {
     expect(dateKey(2026, 12, 31)).toBe('2026-12-31');
     expect(jalaliDateKey(1405, 9, 4)).toBe('2026-11-25');
     expect(formatJalaliDate('2026-11-25')).toBe('۴ آذر ۱۴۰۵');
+  });
+
+  it('labels an event time in Persian digits and tolerates a missing time', () => {
+    expect(formatEventTime('14:30:00')).toBe('۱۴:۳۰');
+    expect(formatEventTime('08:05')).toBe('۰۸:۰۵');
+    expect(formatEventTime(null)).toBe('');
   });
 });

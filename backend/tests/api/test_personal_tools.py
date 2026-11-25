@@ -182,15 +182,20 @@ async def test_calendar_events_lifecycle_and_window_filter(client: AsyncClient) 
     await _register_and_login(client, "owner@example.com")
 
     december = await _create(
-        client, EVENTS_URL, {"title": "  جلسه  ", "event_date": "2026-12-10"}
+        client,
+        EVENTS_URL,
+        {"title": "  جلسه  ", "event_date": "2026-12-10", "event_time": "14:30"},
     )
-    assert set(december) == {"id", "title", "event_date", "created_at"}
+    assert set(december) == {"id", "title", "event_date", "event_time", "created_at"}
     assert december["title"] == "جلسه"
     assert december["event_date"] == "2026-12-10"
+    assert december["event_time"] == "14:30:00"
 
     january = await _create(
         client, EVENTS_URL, {"title": "سال نو", "event_date": "2027-01-01"}
     )
+    # The time stays optional: an event without one is still a full-day entry.
+    assert january["event_time"] is None
 
     all_events = await client.get(EVENTS_URL)
     assert all_events.json()["total"] == 2
@@ -215,8 +220,12 @@ async def test_calendar_rejects_invalid_payloads(client: AsyncClient) -> None:
     blank = await client.post(EVENTS_URL, json={"title": "  ", "event_date": "2026-12-01"})
     missing_date = await client.post(EVENTS_URL, json={"title": "Meet"})
     bad_date = await client.post(EVENTS_URL, json={"title": "Meet", "event_date": "not-a-date"})
+    bad_time = await client.post(
+        EVENTS_URL,
+        json={"title": "Meet", "event_date": "2026-12-01", "event_time": "25:00"},
+    )
 
-    for response in (blank, missing_date, bad_date):
+    for response in (blank, missing_date, bad_date, bad_time):
         assert response.status_code == 422
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 

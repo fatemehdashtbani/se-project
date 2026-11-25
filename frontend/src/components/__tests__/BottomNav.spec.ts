@@ -3,6 +3,9 @@ import { RouterLinkStub, flushPromises, mount } from '@vue/test-utils';
 import BottomNav from '../BottomNav.vue';
 import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import LogoutIcon from '@/components/icons/LogoutIcon.vue';
+import ChecklistIcon from '@/components/icons/ChecklistIcon.vue';
+import CalendarIcon from '@/components/icons/CalendarIcon.vue';
+import NoteIcon from '@/components/icons/NoteIcon.vue';
 
 const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
   const logoutMock = vi.fn();
@@ -77,11 +80,14 @@ describe('BottomNav (F-029)', () => {
     }
   });
 
-  it('uses the existing profile icon and the new logout icon', () => {
+  it('uses the profile, logout and personal-tool icon components', () => {
     const wrapper = mountNav();
 
     expect(wrapper.findComponent(ProfileIcon).exists()).toBe(true);
     expect(wrapper.findComponent(LogoutIcon).exists()).toBe(true);
+    expect(wrapper.findComponent(ChecklistIcon).exists()).toBe(true);
+    expect(wrapper.findComponent(CalendarIcon).exists()).toBe(true);
+    expect(wrapper.findComponent(NoteIcon).exists()).toBe(true);
   });
 
   it('logs out and redirects to /login', async () => {
