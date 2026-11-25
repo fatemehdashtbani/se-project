@@ -181,6 +181,22 @@
           </RouterLink>
         </div>
       </section>
+
+      <MentorSection v-if="authStore.user?.role === 'user'" />
+
+      <section
+        v-else-if="authStore.user?.role === 'mentor'"
+        class="mt-10 rounded-2xl border border-slate-800 bg-slate-800/40 p-5 sm:p-6"
+      >
+        <h2 class="text-xl font-semibold text-white">مربی و مشاور</h2>
+        <p class="mt-2 text-sm text-slate-400">به میز کار مربی بروید.</p>
+        <RouterLink
+          to="/mentor"
+          class="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/70"
+        >
+          میز کار مربی
+        </RouterLink>
+      </section>
     </main>
 
     <BottomNav />
@@ -190,6 +206,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import BottomNav from '@/components/BottomNav.vue';
+import MentorSection from '@/components/MentorSection.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRoutineStore, type Routine } from '@/stores/routine';
 

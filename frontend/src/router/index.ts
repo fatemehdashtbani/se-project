@@ -43,6 +43,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mentor',
+      name: 'mentor',
+      component: () => import('@/views/MentorPage.vue'),
+      meta: { requiresAuth: true, requiresRole: 'mentor' as UserRole },
+    },
+    {
       path: '/register',
       name: 'register',
       component: () => import('@/views/RegisterPage.vue'),

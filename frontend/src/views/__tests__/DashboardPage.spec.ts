@@ -100,7 +100,7 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
 
   function mountPage() {
     return mount(DashboardPage, {
-      global: { stubs: { RouterLink: RouterLinkStub } },
+      global: { stubs: { RouterLink: RouterLinkStub, MentorSection: { template: '<div />' } } },
     });
   }
 

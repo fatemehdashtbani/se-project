@@ -71,7 +71,7 @@ For every new feature:
 | F-032 | UI/UX corrections — light/dark theme toggle, wide two-column profile form, dashboard greeting, honest forgot-password notice | P2 | Done | F-026, F-028, F-031 | `docs/features/F-032-ui-ux-fixes/SPEC.md` | `docs/features/F-032-ui-ux-fixes/PLAN.md` |
 | F-033 | Personal tools — checklist, Jalali calendar events, notes (API + pages, shared bottom-nav links) | P1 | Done | F-019, F-023, F-029 | `docs/features/F-033-personal-tools/SPEC.md` | `docs/features/F-033-personal-tools/PLAN.md` |
 | F-034 | Calendar event time and same-day reminders | P1 | Done | F-033 | `docs/features/F-034-calendar-time-and-reminders/SPEC.md` | `docs/features/F-034-calendar-time-and-reminders/PLAN.md` |
-| F-035 | Mentor collaboration — directory, consent grant, 1:1 chat, mentor programs adopted as routines (dashboard section + `/mentor`) | P1 | In Progress | F-003, F-019, F-023, F-005 | `docs/features/F-035-mentor-collaboration/SPEC.md` | `docs/features/F-035-mentor-collaboration/PLAN.md` |
+| F-035 | Mentor collaboration — directory, consent grant, 1:1 chat, mentor programs adopted as routines (dashboard section + `/mentor`) | P1 | Done | F-003, F-019, F-023, F-005 | `docs/features/F-035-mentor-collaboration/SPEC.md` | `docs/features/F-035-mentor-collaboration/PLAN.md` |
 
 ## Current sprint
 
