@@ -383,6 +383,55 @@ class MentorProgram(Base):
     )
 
 
+class MentorApplication(Base):
+    """A user's request to join the platform as a mentor (F-036).
+
+    One row per account: a rejected request is resubmitted in place so the
+    latest application and its review state are always a single lookup. An
+    approval promotes ``User.role`` and upserts the public mentor profile.
+    """
+
+    __tablename__ = "mentor_applications"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_mentor_applications_user"),
+        Index("ix_mentor_applications_status", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    expertise: Mapped[str] = mapped_column(String(200), nullable=False)
+    bio: Mapped[str] = mapped_column(Text, nullable=False)
+    documents: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pending", server_default="pending"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+
 class CalendarEvent(Base):
     """A dated entry shown in a user's calendar (F-033)."""
 

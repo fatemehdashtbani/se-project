@@ -68,8 +68,16 @@ describe('LoginPage (F-002, F-026)', () => {
   beforeEach(() => {
     loginMock.mockReset();
     pushMock.mockReset();
+    authStore.logout.mockReset();
     localStorage.clear();
-    authStore.user = null;
+    // The auth store fills this in from /auth/me after a successful login;
+    // the role selector is checked against it before navigating.
+    authStore.user = {
+      id: 'user-id',
+      email: VALID_EMAIL,
+      role: 'user',
+      timezone: 'UTC',
+    };
     authStore.isLoading = false;
   });
 
@@ -326,6 +334,36 @@ describe('LoginPage (F-002, F-026)', () => {
     expect(mentorRole).toBeDefined();
     expect(userRole?.attributes('aria-checked')).toBe('true');
     expect(mentorRole?.attributes('aria-checked')).toBe('false');
+  });
+
+  it('shows a role mismatch error instead of the 403 page when a user picks mentor', async () => {
+    const wrapper = mountPage();
+
+    await roleOption(wrapper, 'مربی')?.trigger('click');
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('نقش انتخاب شده با نقش واقعی حساب یکی نیست');
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(authStore.logout).toHaveBeenCalled();
+  });
+
+  it('shows the same error when a mentor account picks the user role', async () => {
+    authStore.user = {
+      id: 'mentor-id',
+      email: VALID_EMAIL,
+      role: 'mentor',
+      timezone: 'UTC',
+    };
+    const wrapper = mountPage();
+
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('نقش انتخاب شده با نقش واقعی حساب یکی نیست');
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it('redirects to the mentor workspace when the mentor role is selected', async () => {

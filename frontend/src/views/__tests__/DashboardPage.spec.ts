@@ -14,13 +14,31 @@ import type { Routine } from '@/stores/routine';
 const {
   authStore,
   routineStore,
+  mentorApplicationStore,
   fetchRoutinesMock,
+  fetchApplicationMock,
   createRoutineMock,
   updateRoutineMock,
   deleteRoutineMock,
 } = vi.hoisted(() => {
   return {
     fetchRoutinesMock: vi.fn(),
+    fetchApplicationMock: vi.fn(),
+    mentorApplicationStore: {
+      application: null as {
+        id: string;
+        user_id: string;
+        expertise: string;
+        bio: string;
+        documents: string | null;
+        status: 'pending' | 'approved' | 'rejected';
+        created_at: string;
+        updated_at: string;
+        reviewed_at: string | null;
+      } | null,
+      isLoading: false,
+      fetchMine: vi.fn(),
+    },
     createRoutineMock: vi.fn(),
     updateRoutineMock: vi.fn(),
     deleteRoutineMock: vi.fn(),
@@ -55,6 +73,10 @@ vi.mock('@/stores/auth', () => ({
 
 vi.mock('@/stores/routine', () => ({
   useRoutineStore: () => routineStore,
+}));
+
+vi.mock('@/stores/mentorApplication', () => ({
+  useMentorApplicationStore: () => mentorApplicationStore,
 }));
 
 const SIGNED_IN_USER = {
@@ -93,6 +115,9 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
     routineStore.createRoutine = createRoutineMock;
     routineStore.updateRoutine = updateRoutineMock;
     routineStore.deleteRoutine = deleteRoutineMock;
+    fetchApplicationMock.mockReset().mockResolvedValue(undefined);
+    mentorApplicationStore.fetchMine = fetchApplicationMock;
+    mentorApplicationStore.application = null;
     routineStore.routines = [];
     authStore.user = { ...SIGNED_IN_USER };
     authStore.isLoading = false;
@@ -145,6 +170,35 @@ describe('DashboardPage (F-023, F-026, F-005)', () => {
 
     expect(wrapper.get('div').classes()).toContain('bg-slate-900');
     expect(wrapper.get('header').classes()).toContain('bg-slate-900');
+  });
+
+  it('links the mentor collaboration button to the application page', () => {
+    const wrapper = mountPage();
+
+    const link = wrapper
+      .findAllComponents(RouterLinkStub)
+      .find((candidate) => candidate.text() === 'درخواست همکاری به عنوان مربی');
+
+    expect(link).toBeDefined();
+    expect(link?.props('to')).toBe('/become-a-mentor');
+    expect(fetchApplicationMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the pending state of a submitted mentor request', () => {
+    mentorApplicationStore.application = {
+      id: 'application-id',
+      user_id: 'user-id',
+      expertise: 'برنامه‌ریزی درسی',
+      bio: 'سابقه مشاوره',
+      documents: null,
+      status: 'pending',
+      created_at: '2026-11-26T08:00:00Z',
+      updated_at: '2026-11-26T08:00:00Z',
+      reviewed_at: null,
+    };
+    const wrapper = mountPage();
+
+    expect(wrapper.text()).toContain('درخواست شما در انتظار تایید مدیر است.');
   });
 
   it('renders the shared bottom navigation', () => {

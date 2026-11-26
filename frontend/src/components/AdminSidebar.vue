@@ -63,6 +63,7 @@ import { useAuthStore } from '@/stores/auth';
 const managementItems = [
   { to: '/admin', label: 'داشبورد' },
   { to: '/admin/users', label: 'کاربران' },
+  { to: '/admin/mentor-applications', label: 'درخواست‌های مربیگری' },
   { to: '/admin/plans', label: 'اشتراکها' },
 ];
 

@@ -182,6 +182,45 @@
         </div>
       </section>
 
+      <section
+        v-if="authStore.user?.role === 'user'"
+        class="mt-10 rounded-2xl border border-slate-800 bg-slate-800/40 p-5 sm:p-6"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h2 class="text-xl font-semibold text-white">همکاری به عنوان مربی</h2>
+            <p class="mt-2 text-sm text-slate-400">
+              اگر در حوزه‌ای تخصص دارید، درخواست همکاری بفرستید تا پس از تایید مدیر به عنوان
+              مربی فعالیت کنید.
+            </p>
+            <p
+              v-if="mentorApplicationStore.application?.status === 'pending'"
+              class="mt-2 text-sm text-amber-300"
+            >
+              درخواست شما در انتظار تایید مدیر است.
+            </p>
+            <p
+              v-else-if="mentorApplicationStore.application?.status === 'rejected'"
+              class="mt-2 text-sm text-rose-300"
+            >
+              درخواست شما رد شده است؛ می‌توانید اطلاعات را اصلاح و دوباره ارسال کنید.
+            </p>
+            <p
+              v-else-if="mentorApplicationStore.application?.status === 'approved'"
+              class="mt-2 text-sm text-emerald-300"
+            >
+              درخواست شما تایید شده است.
+            </p>
+          </div>
+          <RouterLink
+            to="/become-a-mentor"
+            class="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/70"
+          >
+            درخواست همکاری به عنوان مربی
+          </RouterLink>
+        </div>
+      </section>
+
       <MentorSection v-if="authStore.user?.role === 'user'" />
 
       <section
@@ -208,10 +247,12 @@ import { onMounted, ref } from 'vue';
 import BottomNav from '@/components/BottomNav.vue';
 import MentorSection from '@/components/MentorSection.vue';
 import { useAuthStore } from '@/stores/auth';
+import { useMentorApplicationStore } from '@/stores/mentorApplication';
 import { useRoutineStore, type Routine } from '@/stores/routine';
 
 const authStore = useAuthStore();
 const routineStore = useRoutineStore();
+const mentorApplicationStore = useMentorApplicationStore();
 
 const showCreateForm = ref(false);
 const newTitle = ref('');
@@ -229,8 +270,21 @@ async function loadRoutines(): Promise<void> {
   }
 }
 
+async function loadMentorApplication(): Promise<void> {
+  if (authStore.user?.role !== 'user') {
+    return;
+  }
+
+  try {
+    await mentorApplicationStore.fetchMine();
+  } catch {
+    // The dashboard stays usable when the application status is unavailable.
+  }
+}
+
 onMounted(() => {
   void loadRoutines();
+  void loadMentorApplication();
 });
 
 function openCreateForm(): void {

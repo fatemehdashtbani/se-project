@@ -5,6 +5,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.routes.auth import router as auth_router
 from app.api.routes.calendar import router as calendar_router
 from app.api.routes.checklist import router as checklist_router
+from app.api.routes.mentor_applications import (
+    admin_router as mentor_application_admin_router,
+)
+from app.api.routes.mentor_applications import router as mentor_applications_router
 from app.api.routes.mentor_messages import router as mentor_messages_router
 from app.api.routes.mentor_programs import router as mentor_programs_router
 from app.api.routes.mentors import router as mentors_router
@@ -31,6 +35,8 @@ app.include_router(calendar_router)
 app.include_router(mentors_router)
 app.include_router(mentor_messages_router)
 app.include_router(mentor_programs_router)
+app.include_router(mentor_applications_router)
+app.include_router(mentor_application_admin_router)
 
 
 @app.get("/api/v1/healthz", tags=["health"])

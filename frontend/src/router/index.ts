@@ -19,6 +19,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/become-a-mentor',
+      name: 'become-a-mentor',
+      component: () => import('@/views/BecomeMentorPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfilePage.vue'),
@@ -80,6 +86,12 @@ const router = createRouter({
           name: 'admin-users',
           component: AdminSectionPage,
           meta: { title: 'مدیریت کاربران' },
+        },
+        {
+          path: 'mentor-applications',
+          name: 'admin-mentor-applications',
+          component: () => import('@/views/admin/AdminMentorApplicationsPage.vue'),
+          meta: { title: 'درخواست‌های مربیگری' },
         },
         {
           path: 'plans',

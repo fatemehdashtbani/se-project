@@ -68,12 +68,14 @@ describe('AdminSidebar (F-030)', () => {
     expect(targets).toEqual([
       '/admin',
       '/admin/users',
+      '/admin/mentor-applications',
       '/admin/plans',
       '/dashboard',
       '/profile',
     ]);
     expect(wrapper.text()).toContain('داشبورد');
     expect(wrapper.text()).toContain('کاربران');
+    expect(wrapper.text()).toContain('درخواست‌های مربیگری');
     expect(wrapper.text()).toContain('اشتراکها');
     expect(wrapper.text()).toContain('بازگشت به روتینها');
     expect(wrapper.text()).toContain('پروفایل');

@@ -157,7 +157,7 @@ import {
   validatePassword,
   validatePhone,
 } from '@/shared/utils/validation';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, type UserRole } from '@/stores/auth';
 
 type LoginMode = 'email' | 'mobile';
 type LoginRole = 'user' | 'mentor';
@@ -171,6 +171,8 @@ const ROLE_OPTIONS: ReadonlyArray<{ value: LoginRole; label: string }> = [
   { value: 'user', label: 'کاربر' },
   { value: 'mentor', label: 'مربی' },
 ];
+
+const ROLE_MISMATCH_MESSAGE = 'نقش انتخاب شده با نقش واقعی حساب یکی نیست';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -246,6 +248,17 @@ function selectMode(next: LoginMode): void {
 
 function selectRole(next: LoginRole): void {
   role.value = next;
+  serverError.value = '';
+}
+
+/**
+ * The selected role only chooses the destination; the account's server-owned
+ * role stays authoritative. Choosing «مربی» for a non-mentor (or «کاربر» for a
+ * mentor account) is refused instead of bouncing through the 403 page. Admins
+ * still sign in through the «کاربر» option.
+ */
+function matchesAccountRole(selected: LoginRole, actual: UserRole): boolean {
+  return selected === 'mentor' ? actual === 'mentor' : actual !== 'mentor';
 }
 
 function validate(): boolean {
@@ -271,12 +284,23 @@ async function handleSubmit(): Promise<void> {
 
   try {
     await authStore.login(identifierValue, password.value, rememberMe.value);
+
+    const user = authStore.user;
+    if (!user || !matchesAccountRole(role.value, user.role)) {
+      try {
+        // Do not leave a session behind that contradicts the chosen role.
+        await authStore.logout();
+      } catch {
+        // The store clears its local identity even when revoke fails.
+      }
+      serverError.value = ROLE_MISMATCH_MESSAGE;
+      return;
+    }
+
     storeRememberedLogin(
       rememberMe.value ? { identifier: identifierValue, mode: mode.value } : null,
     );
-    await router.push(
-      role.value === 'mentor' ? '/mentor' : panelPath(authStore.user?.role),
-    );
+    await router.push(role.value === 'mentor' ? '/mentor' : panelPath(user.role));
   } catch (error) {
     serverError.value = getPersianError(
       error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',
