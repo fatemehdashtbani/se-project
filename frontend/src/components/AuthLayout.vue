@@ -1,7 +1,9 @@
 <template>
   <div dir="rtl" class="min-h-screen bg-slate-900 text-slate-100 lg:grid lg:grid-cols-2">
     <!-- First child, so RTL places the artwork on the right at desktop width. -->
-    <div class="relative h-44 w-full overflow-hidden lg:h-auto lg:min-h-screen">
+    <div
+      class="relative aspect-[4/3] w-full overflow-hidden lg:aspect-auto lg:h-auto lg:min-h-screen"
+    >
       <img
         src="/login-bg.png"
         alt=""
@@ -15,7 +17,9 @@
       </p>
     </div>
 
-    <div class="flex min-h-[calc(100vh-11rem)] items-center justify-center px-4 py-10 lg:min-h-screen">
+    <div
+      class="flex min-h-[calc(100vh-75vw)] items-center justify-center px-4 py-10 lg:min-h-screen"
+    >
       <div class="w-full max-w-md">
         <header class="mb-8 text-center">
           <p class="text-3xl font-extrabold tracking-tight text-white">روتین کده</p>

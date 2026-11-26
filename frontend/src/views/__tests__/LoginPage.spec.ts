@@ -60,6 +60,10 @@ function mobileTab(wrapper: ReturnType<typeof mount>) {
   return wrapper.findAll('button').find((button) => button.text().includes('موبایل'));
 }
 
+function roleOption(wrapper: ReturnType<typeof mount>, label: string) {
+  return wrapper.findAll('button').find((button) => button.text() === label);
+}
+
 describe('LoginPage (F-002, F-026)', () => {
   beforeEach(() => {
     loginMock.mockReset();
@@ -283,7 +287,7 @@ describe('LoginPage (F-002, F-026)', () => {
     const wrapper = mountPage();
 
     expect(wrapper.text()).toContain('ورود به حساب');
-    expect(wrapper.text()).toContain('برای مدیریت روتینهای خود وارد شوید');
+    expect(wrapper.text()).toContain('برای مدیریت روتین های خود وارد شوید');
   });
 
   it('redirects to the dashboard after a successful login', async () => {
@@ -310,5 +314,34 @@ describe('LoginPage (F-002, F-026)', () => {
     await flushPromises();
 
     expect(pushMock).toHaveBeenCalledWith('/admin');
+  });
+
+  it('offers a role selector after the password field with user selected by default', () => {
+    const wrapper = mountPage();
+
+    const userRole = roleOption(wrapper, 'کاربر');
+    const mentorRole = roleOption(wrapper, 'مربی');
+
+    expect(userRole).toBeDefined();
+    expect(mentorRole).toBeDefined();
+    expect(userRole?.attributes('aria-checked')).toBe('true');
+    expect(mentorRole?.attributes('aria-checked')).toBe('false');
+  });
+
+  it('redirects to the mentor workspace when the mentor role is selected', async () => {
+    authStore.user = {
+      id: 'mentor-id',
+      email: VALID_EMAIL,
+      role: 'mentor',
+      timezone: 'UTC',
+    };
+    const wrapper = mountPage();
+
+    await roleOption(wrapper, 'مربی')?.trigger('click');
+    await fillForm(wrapper, VALID_EMAIL, VALID_PASSWORD);
+    await submit(wrapper);
+    await flushPromises();
+
+    expect(pushMock).toHaveBeenCalledWith('/mentor');
   });
 });

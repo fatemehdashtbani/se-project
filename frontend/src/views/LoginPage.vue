@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout title="ورود به حساب" subtitle="برای مدیریت روتینهای خود وارد شوید">
+  <AuthLayout title="ورود به حساب" subtitle="برای مدیریت روتین های خود وارد شوید">
     <p
       v-if="serverError"
       role="alert"
@@ -81,6 +81,32 @@
         </p>
       </div>
 
+      <fieldset>
+        <legend class="mb-2 block text-sm text-slate-300">نقش</legend>
+        <div
+          class="grid grid-cols-2 gap-1 rounded-xl border border-slate-800 bg-slate-800/60 p-1"
+          role="radiogroup"
+          aria-label="نقش"
+        >
+          <button
+            v-for="option in ROLE_OPTIONS"
+            :key="option.value"
+            type="button"
+            role="radio"
+            :aria-checked="role === option.value"
+            :class="[
+              'rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50',
+              role === option.value
+                ? 'bg-slate-700 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200',
+            ]"
+            @click="selectRole(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </fieldset>
+
       <div class="flex items-center justify-between gap-3">
         <label class="flex items-center gap-2 text-sm text-slate-300">
           <input
@@ -134,10 +160,16 @@ import {
 import { useAuthStore } from '@/stores/auth';
 
 type LoginMode = 'email' | 'mobile';
+type LoginRole = 'user' | 'mentor';
 
 const LOGIN_MODES: ReadonlyArray<{ value: LoginMode; label: string }> = [
   { value: 'email', label: 'ایمیل' },
   { value: 'mobile', label: 'موبایل' },
+];
+
+const ROLE_OPTIONS: ReadonlyArray<{ value: LoginRole; label: string }> = [
+  { value: 'user', label: 'کاربر' },
+  { value: 'mentor', label: 'مربی' },
 ];
 
 const authStore = useAuthStore();
@@ -191,6 +223,7 @@ function storeRememberedLogin(value: RememberedLogin | null): void {
 const rememberedLogin = readRememberedLogin();
 
 const mode = ref<LoginMode>(rememberedLogin?.mode ?? 'email');
+const role = ref<LoginRole>('user');
 const identifier = ref(rememberedLogin?.identifier ?? '');
 const password = ref('');
 const rememberMe = ref(rememberedLogin !== null);
@@ -209,6 +242,10 @@ function selectMode(next: LoginMode): void {
   // the old text under the new label would be misleading.
   identifier.value = '';
   errors.identifier = '';
+}
+
+function selectRole(next: LoginRole): void {
+  role.value = next;
 }
 
 function validate(): boolean {
@@ -237,7 +274,9 @@ async function handleSubmit(): Promise<void> {
     storeRememberedLogin(
       rememberMe.value ? { identifier: identifierValue, mode: mode.value } : null,
     );
-    await router.push(panelPath(authStore.user?.role));
+    await router.push(
+      role.value === 'mentor' ? '/mentor' : panelPath(authStore.user?.role),
+    );
   } catch (error) {
     serverError.value = getPersianError(
       error instanceof ApiError ? error.code : 'UNKNOWN_ERROR',
