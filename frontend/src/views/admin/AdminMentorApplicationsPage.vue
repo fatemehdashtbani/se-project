@@ -46,7 +46,7 @@
           </div>
           <span
             class="rounded-md px-2 py-1 text-xs font-medium"
-            :class="statusClass(application.status)"
+            :class="STATUS_CLASSES[application.status]"
           >
             {{ applicationStatusLabels[application.status] }}
           </span>
@@ -107,16 +107,11 @@ import {
 const mentorApplicationStore = useMentorApplicationStore();
 const errorMessage = ref('');
 
-function statusClass(status: MentorApplicationStatus): string {
-  switch (status) {
-    case 'approved':
-      return 'bg-emerald-500/10 text-emerald-300';
-    case 'rejected':
-      return 'bg-red-500/10 text-red-300';
-    default:
-      return 'bg-amber-500/10 text-amber-300';
-  }
-}
+const STATUS_CLASSES: Record<MentorApplicationStatus, string> = {
+  pending: 'bg-amber-500/10 text-amber-300',
+  approved: 'bg-emerald-500/10 text-emerald-300',
+  rejected: 'bg-red-500/10 text-red-300',
+};
 
 function formatDate(value: string): string {
   try {

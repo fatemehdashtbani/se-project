@@ -17,14 +17,6 @@
         {{ errorMessage }}
       </p>
 
-      <p
-        v-if="successMessage"
-        role="status"
-        class="mb-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
-      >
-        {{ successMessage }}
-      </p>
-
       <section
         v-if="isMentor"
         class="rounded-2xl border border-slate-800 bg-slate-800/40 p-5 sm:p-6"
@@ -44,6 +36,7 @@
       <template v-else>
         <section
           v-if="mentorApplicationStore.application?.status === 'pending'"
+          role="status"
           class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 sm:p-6"
         >
           <h2 class="text-lg font-semibold text-amber-200">درخواست شما در انتظار تایید است</h2>
@@ -163,7 +156,6 @@ const expertise = ref('');
 const bio = ref('');
 const documents = ref('');
 const errorMessage = ref('');
-const successMessage = ref('');
 const errors = reactive({ expertise: '', bio: '' });
 
 const isMentor = computed(() => authStore.user?.role === 'mentor');
@@ -203,7 +195,6 @@ function validate(): boolean {
 }
 
 async function handleSubmit(): Promise<void> {
-  successMessage.value = '';
   if (!validate()) {
     return;
   }
@@ -215,7 +206,8 @@ async function handleSubmit(): Promise<void> {
       bio: bio.value.trim(),
       documents: documents.value.trim() || null,
     });
-    successMessage.value = 'درخواست شما ثبت شد و در انتظار تایید مدیر است.';
+    // The store now holds the pending application, so the status section above
+    // is the confirmation; no separate success notice is needed.
   } catch {
     errorMessage.value = 'ثبت درخواست ناموفق بود. دوباره تلاش کنید.';
   }

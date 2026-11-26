@@ -26,14 +26,15 @@
 1. `stores/mentorApplication.ts`: typed application, admin item and status label
    map, plus `fetchMine`, `submit`, `fetchApplications`, `approve`, `reject`.
 2. `views/BecomeMentorPage.vue` at `/become-a-mentor`: state banner
-   (pending/approved/rejected), form (expertise, biography, documents), Persian
-   validation, success notice, and the mentor-account short circuit.
+   (pending/approved/rejected, which also confirms a new submission), form
+   (expertise, biography, documents), Persian validation, and the mentor-account
+   short circuit.
 3. `views/admin/AdminMentorApplicationsPage.vue` at
    `/admin/mentor-applications`: queue, empty/loading/error states, and the
    approve/reject actions.
-4. Dashboard section «همکاری به عنوان مربی» for `role === "user"` with the
-   button «درخواست همکاری به عنوان مربی» and the current status; the store is
-   loaded after mount without blocking routines.
+4. `components/MentorApplicationSection.vue`, rendered on the dashboard for
+   `role === "user"`: the button «درخواست همکاری به عنوان مربی» and the current
+   status; it loads the store after mount without blocking routines.
 5. Router: `/become-a-mentor` (`requiresAuth`) and the admin child route; add
    «درخواست‌های مربیگری» to `AdminSidebar`.
 6. Tests: `BecomeMentorPage.spec.ts`, `AdminMentorApplicationsPage.spec.ts`,

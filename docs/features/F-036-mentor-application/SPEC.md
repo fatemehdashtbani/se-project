@@ -86,11 +86,12 @@ withdrawing an approved role.
 
 ## UI
 
-- Dashboard section «همکاری به عنوان مربی» with a status line and a link button
-  «درخواست همکاری به عنوان مربی» to `/become-a-mentor`.
-- `/become-a-mentor`: status banner for pending/approved/rejected, the form with
-  Persian labels and validation messages, and a success notice after submission.
-  A mentor account sees «شما مربی هستید» and a link to `/mentor` instead.
+- Dashboard `MentorApplicationSection`: «همکاری به عنوان مربی» with a status
+  line and a link button «درخواست همکاری به عنوان مربی» to `/become-a-mentor`.
+- `/become-a-mentor`: status banner for pending/approved/rejected (the pending
+  banner is the confirmation after submission), and the form with Persian labels
+  and validation messages. A mentor account sees «شما مربی هستید» and a link to
+  `/mentor` instead.
 - `/admin/mentor-applications`: queue cards with applicant name/email, expertise,
   biography, documents and date; «تایید» / «رد درخواست» for pending rows and a
   Persian empty state. The admin sidebar gains «درخواست‌های مربیگری».

@@ -107,8 +107,8 @@
         </div>
       </fieldset>
 
-      <div class="flex items-center justify-between gap-3">
-        <label class="flex items-center gap-2 text-sm text-slate-300">
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <label class="flex items-center gap-2 whitespace-nowrap text-sm text-slate-300">
           <input
             id="remember"
             v-model="rememberMe"
@@ -120,7 +120,7 @@
 
         <RouterLink
           to="/forgot-password"
-          class="text-sm text-blue-400 transition-colors hover:text-blue-300"
+          class="whitespace-nowrap text-sm text-blue-400 transition-colors hover:text-blue-300"
         >
           فراموشی رمز عبور؟
         </RouterLink>

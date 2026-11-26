@@ -92,7 +92,7 @@ describe('BecomeMentorPage (F-036)', () => {
     expect(fetchMineMock).toHaveBeenCalledTimes(1);
   });
 
-  it('submits trimmed details and reports the pending status', async () => {
+  it('submits trimmed details', async () => {
     const wrapper = mountPage();
     await flushPromises();
 
@@ -107,7 +107,6 @@ describe('BecomeMentorPage (F-036)', () => {
       bio: 'ده سال تجربه مشاوره تحصیلی.',
       documents: null,
     });
-    expect(wrapper.text()).toContain('درخواست شما ثبت شد و در انتظار تایید مدیر است.');
   });
 
   it('rejects an empty form without calling the store', async () => {
