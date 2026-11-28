@@ -79,6 +79,14 @@ class InvalidCurrentPasswordError(AppError):
     message = "Current password is incorrect."
 
 
+class AccountDisabledError(AppError):
+    """Raised when a banned or disabled account tries to authenticate (F-037)."""
+
+    status_code = 403
+    code = "ACCOUNT_DISABLED"
+    message = "This account is disabled. Contact the platform administrator."
+
+
 class InvalidRefreshTokenError(AppError):
     """Raised when a refresh token is unknown, expired, or replayed."""
 
@@ -183,6 +191,11 @@ async def authenticate_user(
     if not verify_password(password, password_hash):
         return None
 
+    # The password is checked first so a disabled account cannot be discovered
+    # without valid credentials.
+    if user is not None and (user.is_banned or not user.is_active):
+        raise AccountDisabledError
+
     return user
 
 
@@ -261,6 +274,8 @@ async def rotate_refresh_token(
     user = await session.get(User, row.user_id)
     if user is None:
         raise InvalidRefreshTokenError
+    if user.is_banned or not user.is_active:
+        raise AccountDisabledError
 
     row.revoked_at = now
 

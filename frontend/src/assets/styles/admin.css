@@ -1,0 +1,155 @@
+/* Purple/white theme for the admin panel.
+   Element Plus renders only inside /admin, so the palette overrides live here
+   rather than in the public application styles. */
+
+:root {
+  --el-color-primary: #7c3aed;
+  --el-color-primary-light-3: #a78bfa;
+  --el-color-primary-light-5: #c4b5fd;
+  --el-color-primary-light-7: #ddd6fe;
+  --el-color-primary-light-8: #ede9fe;
+  --el-color-primary-light-9: #f5f3ff;
+  --el-color-primary-dark-2: #6d28d9;
+  --el-border-radius-base: 10px;
+}
+
+.admin-shell {
+  --admin-purple-900: #3b0764;
+  --admin-purple-800: #4c1d95;
+  --admin-purple-600: #7c3aed;
+  --admin-purple-100: #ede9fe;
+  --admin-surface: #ffffff;
+  --admin-bg: #f7f5ff;
+  --admin-text: #2e1065;
+  --admin-muted: #7c6a9a;
+
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+/* ---- Sidebar ---------------------------------------------------------- */
+.admin-sidebar {
+  background: linear-gradient(180deg, var(--admin-purple-900) 0%, #5b21b6 100%);
+  color: #f5f3ff;
+}
+
+.admin-sidebar .el-menu {
+  background: transparent;
+  border-inline-end: none;
+}
+
+.admin-sidebar .el-menu-item,
+.admin-sidebar .el-sub-menu__title {
+  color: #ddd6fe;
+  border-radius: 10px;
+  margin: 2px 8px;
+  height: 44px;
+  line-height: 44px;
+}
+
+.admin-sidebar .el-menu-item:hover,
+.admin-sidebar .el-sub-menu__title:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.admin-sidebar .el-menu-item.is-active {
+  background-color: #ffffff;
+  color: var(--admin-purple-800);
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(15, 3, 40, 0.35);
+}
+
+/* ---- Surfaces --------------------------------------------------------- */
+.admin-card {
+  border: 1px solid #eee6ff;
+  border-radius: 16px;
+  background: var(--admin-surface);
+  box-shadow: 0 10px 30px -22px rgba(76, 29, 149, 0.55);
+}
+
+.admin-card .el-card__header {
+  border-bottom: 1px solid #f1ebff;
+  padding: 14px 18px;
+  font-weight: 700;
+  color: var(--admin-purple-800);
+}
+
+.admin-stat {
+  border: 1px solid #eee6ff;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 18px;
+  box-shadow: 0 12px 30px -26px rgba(76, 29, 149, 0.7);
+}
+
+.admin-stat__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--admin-purple-100);
+  color: var(--admin-purple-600);
+}
+
+/* ---- Element Plus RTL/table adjustments ------------------------------- */
+.admin-shell .el-table {
+  --el-table-header-bg-color: #f5f3ff;
+  --el-table-header-text-color: #4c1d95;
+  --el-table-row-hover-bg-color: #faf7ff;
+  --el-table-border-color: #f1ebff;
+}
+
+.admin-shell .el-table th.el-table__cell {
+  font-weight: 700;
+}
+
+.admin-shell .el-table .cell {
+  text-align: right;
+}
+
+.admin-shell .el-input__inner,
+.admin-shell .el-textarea__inner {
+  text-align: right;
+}
+
+/* Element Plus ships no RTL build; these rules mirror the few components
+   whose layout assumes a left-to-right direction. */
+.admin-shell .el-pagination {
+  direction: rtl;
+  justify-content: flex-start;
+}
+
+.admin-shell .el-dialog__header,
+.admin-shell .el-drawer__header {
+  text-align: right;
+}
+
+.admin-shell .el-message-box__message {
+  text-align: right;
+}
+
+.admin-shell .el-form-item__label {
+  justify-content: flex-start;
+}
+
+.admin-shell .el-tabs__item {
+  font-weight: 600;
+}
+
+.admin-shell .el-tag {
+  border-radius: 8px;
+}
+
+.admin-empty {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--admin-muted);
+  font-size: 14px;
+}
+
+.admin-muted {
+  color: var(--admin-muted);
+}

@@ -46,6 +46,15 @@ async def get_current_user(
     if user is None:
         raise AppError("Authentication required", code="UNAUTHORIZED", status_code=401)
 
+    # A ban or a deactivation takes effect on the very next request, without
+    # waiting for the short-lived access token to expire (F-037).
+    if user.is_banned or not user.is_active:
+        raise AppError(
+            "This account is disabled. Contact the platform administrator.",
+            code="ACCOUNT_DISABLED",
+            status_code=403,
+        )
+
     return user
 
 

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount, RouterLinkStub } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
+import ElementPlus from 'element-plus';
 import AdminSidebar from '../AdminSidebar.vue';
-import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import type { User } from '@/stores/auth';
 
 const { authStore, logoutMock, pushMock } = vi.hoisted(() => {
@@ -23,6 +23,7 @@ vi.mock('@/stores/auth', () => ({
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
+  useRoute: () => ({ path: '/admin/users' }),
 }));
 
 const ADMIN: User = {
@@ -38,55 +39,57 @@ const ADMIN: User = {
 
 function mountSidebar() {
   return mount(AdminSidebar, {
-    global: { stubs: { RouterLink: RouterLinkStub } },
+    global: { plugins: [ElementPlus] },
   });
 }
 
-describe('AdminSidebar (F-030)', () => {
+describe('AdminSidebar (F-030, F-037)', () => {
   beforeEach(() => {
     logoutMock.mockReset();
     pushMock.mockReset();
     authStore.user = { ...ADMIN };
   });
 
-  it('renders an RTL dark sidebar for the admin panel', () => {
+  it('renders an RTL purple sidebar for the admin panel', () => {
     const wrapper = mountSidebar();
 
     const aside = wrapper.get('aside');
     expect(aside.attributes('dir')).toBe('rtl');
-    expect(aside.classes()).toContain('bg-slate-900');
+    expect(aside.classes()).toContain('admin-sidebar');
     expect(aside.classes()).toContain('h-screen');
     expect(wrapper.text()).toContain('روتین کده');
     expect(wrapper.text()).toContain('پنل مدیریت');
   });
 
-  it('exposes management links and links back into the normal app', () => {
+  it('exposes every management section and links back into the normal app', () => {
     const wrapper = mountSidebar();
 
-    const targets = wrapper.findAllComponents(RouterLinkStub).map((link) => link.props('to'));
+    const labels = wrapper
+      .findAll('.el-menu-item')
+      .map((item) => item.text().trim());
 
-    expect(targets).toEqual([
-      '/admin',
-      '/admin/users',
-      '/admin/mentor-applications',
-      '/admin/plans',
-      '/dashboard',
-      '/profile',
+    expect(labels).toEqual([
+      'داشبورد',
+      'کاربران',
+      'منتورها و منتورشیپ',
+      'محتوا و روتین‌ها',
+      'سیستم و لاگ‌ها',
+      'بازگشت به روتین‌ها',
+      'پروفایل',
     ]);
-    expect(wrapper.text()).toContain('داشبورد');
-    expect(wrapper.text()).toContain('کاربران');
-    expect(wrapper.text()).toContain('درخواست‌های مربیگری');
-    expect(wrapper.text()).toContain('اشتراکها');
-    expect(wrapper.text()).toContain('بازگشت به روتینها');
-    expect(wrapper.text()).toContain('پروفایل');
   });
 
-  it('shows the signed-in admin and the dedicated logout icon', () => {
+  it('marks the current section as active', () => {
     const wrapper = mountSidebar();
 
-    expect(wrapper.text()).toContain('مدیر');
+    expect(wrapper.get('.el-menu-item.is-active').text()).toContain('کاربران');
+  });
+
+  it('shows the signed-in admin and a dedicated logout control', () => {
+    const wrapper = mountSidebar();
+
     expect(wrapper.text()).toContain('مدیر سامانه');
-    expect(wrapper.get('button[aria-label="خروج"]').findComponent(LogoutIcon).exists()).toBe(true);
+    expect(wrapper.find('button[aria-label="خروج"]').exists()).toBe(true);
   });
 
   it('logs out and returns to the login page', async () => {

@@ -3,7 +3,10 @@ import LoginPage from '@/views/LoginPage.vue';
 import DashboardPage from '@/views/DashboardPage.vue';
 import AdminLayout from '@/components/AdminLayout.vue';
 import AdminHome from '@/views/admin/AdminHome.vue';
-import AdminSectionPage from '@/views/admin/AdminSectionPage.vue';
+import AdminUsers from '@/views/admin/AdminUsers.vue';
+import AdminMentors from '@/views/admin/AdminMentors.vue';
+import AdminContent from '@/views/admin/AdminContent.vue';
+import AdminSystem from '@/views/admin/AdminSystem.vue';
 import ForbiddenPage from '@/views/ForbiddenPage.vue';
 import { useAuthStore, type UserRole } from '@/stores/auth';
 
@@ -80,25 +83,39 @@ const router = createRouter({
       component: AdminLayout,
       meta: { requiresAuth: true, requiresRole: 'admin' as UserRole },
       children: [
-        { path: '', name: 'admin', component: AdminHome },
+        {
+          path: '',
+          name: 'admin',
+          component: AdminHome,
+          meta: { title: 'داشبورد' },
+        },
         {
           path: 'users',
           name: 'admin-users',
-          component: AdminSectionPage,
+          component: AdminUsers,
           meta: { title: 'مدیریت کاربران' },
         },
         {
-          path: 'mentor-applications',
-          name: 'admin-mentor-applications',
-          component: () => import('@/views/admin/AdminMentorApplicationsPage.vue'),
-          meta: { title: 'درخواست‌های مربیگری' },
+          path: 'mentors',
+          name: 'admin-mentors',
+          component: AdminMentors,
+          meta: { title: 'مدیریت منتورها و منتورشیپ' },
         },
         {
-          path: 'plans',
-          name: 'admin-plans',
-          component: AdminSectionPage,
-          meta: { title: 'مدیریت اشتراکها' },
+          path: 'content',
+          name: 'admin-content',
+          component: AdminContent,
+          meta: { title: 'مدیریت محتوا و روتین‌ها' },
         },
+        {
+          path: 'system',
+          name: 'admin-system',
+          component: AdminSystem,
+          meta: { title: 'مدیریت سیستم و لاگ‌ها' },
+        },
+        // Older links stay valid after the sections were consolidated.
+        { path: 'mentor-applications', redirect: '/admin/mentors' },
+        { path: 'plans', redirect: '/admin/content' },
       ],
     },
   ],

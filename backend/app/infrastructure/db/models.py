@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     MetaData,
     String,
     Text,
@@ -43,6 +44,14 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
         String(20), nullable=False, default="user", server_default="user"
+    )
+    # Administrative account controls (F-037). A disabled or banned account can
+    # authenticate but receives ACCOUNT_DISABLED instead of a session.
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
+    is_banned: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
     )
     timezone: Mapped[str] = mapped_column(
         String(64), nullable=False, default="UTC", server_default="UTC"
@@ -455,3 +464,102 @@ class CalendarEvent(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="calendar_events")
+
+
+class HabitCategory(Base):
+    """An administrator-defined grouping for habits and templates (F-037)."""
+
+    __tablename__ = "habit_categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    color: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="#7c3aed", server_default="#7c3aed"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class RoutineTemplate(Base):
+    """A ready-made routine an administrator publishes for users to adopt (F-037)."""
+
+    __tablename__ = "routine_templates"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    duration_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_published: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class Broadcast(Base):
+    """A platform-wide announcement composed by an administrator (F-037)."""
+
+    __tablename__ = "broadcasts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    audience: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="all", server_default="all"
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class SystemLog(Base):
+    """An operational record shown in the admin log viewer (F-037).
+
+    Failed requests are recorded automatically by the request middleware, and
+    administrative mutations append their own ``audit`` entries so privileged
+    actions stay traceable (AGENTS.md section 10).
+    """
+
+    __tablename__ = "system_logs"
+    __table_args__ = (Index("ix_system_logs_created_at", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    level: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="error", server_default="error"
+    )
+    event: Mapped[str] = mapped_column(String(80), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    method: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
